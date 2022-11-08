@@ -1,8 +1,13 @@
 import * as React from "react";
-import { ClassOption } from "../../utils/helpers/ClassesManager";
+import {
+  ClassesManager,
+  ClassOption,
+} from "../../utils/helpers/ClassesManager";
 import { UserGroupIcon } from "@heroicons/react/24/outline";
 import { useCourseEnrollments } from "../../hooks/useCourseEnrollments";
-function htmlDecode(input:string) {
+import { Modal } from "../Modal";
+import { useState } from "react";
+function htmlDecode(input: string) {
   var doc = new DOMParser().parseFromString(input, "text/html");
   return doc.documentElement.textContent;
 }
@@ -10,57 +15,136 @@ function htmlDecode(input:string) {
 export const ClassListEntry = (props: { option: ClassOption }) => {
   const { option } = props;
   const enrollment = useCourseEnrollments();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [enrollmentResult, setEnrollmentResult] = useState(
+    null as null | string
+  );
+  const [clicking, setClicking] = useState(false);
   return (
-    <div
-      className={`flex flex-row gap-4 w-full border dark:border-gray-600/40 border-gray-400/40 hover:bg-gray-900/10 hover:border-purple-200/60 dark:hover:border-purple-800/60 rounded-2xl p-4 dark:hover:bg-gray-700/20 transition-all duration-300 cursor-pointer ${
-        !option.open ? `opacity-50 !cursor-not-allowed` : `group`
-      } ${
-        enrollment?.enrolled?.find((opt) => opt.teacher.raw === option.teacher.raw)
-          ? `!bg-purple-200/20 dark:!bg-purple-800/20`
-          : ``
-      }`}
-    >
-      <div
-        className={`h-auto w-0 border-2 rounded-full dark:border-gray-700 border-gray-400/40 group-hover:border-purple-400 dark:group-hover:border-purple-600 transition-all duration-200`}
-      />
-      <div className="flex flex-col items-start gap-0.5 w-full">
-        <div className={`flex flex-row w-full justify-between`}>
-          <span
-            className={`font-bold text-sm dark:text-gray-50/40 font-wsans w-fit`}
-          >
-            {option.type}
-          </span>
-          <div
-            className={`flex flex-row gap-0.5 items-center text-gray-900/50 dark:text-gray-50/50`}
-          >
-            {option.limit ? `${option.limit} students` : "N/A students"}
-            <UserGroupIcon className={`h-4 w-4`} />
-          </div>
-        </div>
-        <div className={`flex flex-row gap-2 items-center`}>
-          <div
-            className={`font-bold text-xl dark:text-gray-50 font-poppins w-fit`}
-          >
-            {option.teacher.first} {option.teacher.last}
-            {option.teacher.displayName}
-          </div>
-          <div
-            className={`rounded-full p-1 px-2.5 dark:bg-pink-800 bg-pink-300 shadow-sm`}
-          >
-            <span
-              className={`text-xs font-bold dark:text-gray-100 text-gray-700 uppercase`}
-            >
-              {option.category}
+    <>
+      <Modal
+        visible={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setClicking(false);
+          setEnrollmentResult(null);
+        }}
+        className={`!p-6`}
+      >
+        <div className={`w-screen/2 flex flex-col gap-6 items-start`}>
+          {enrollmentResult ? (
+            <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
+              {enrollmentResult}
             </span>
-          </div>
+          ) : (
+            <>
+              <div
+                className={`flex flex-col gap-3 items-start w-full text-base font-medium`}
+              >
+                {" "}
+                <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
+                  Enroll in
+                </span>
+                <b
+                  className={`dark:text-fuchsia-500 text-purple-800 underline transition-all cursor-pointer`}
+                >
+                  {option.teacher.first} {option.teacher.last}{" "}
+                  {option.teacher.displayName}&apos;s class?
+                </b>
+              </div>
+              <button
+                className={`bg-gradient-to-br from-fuchsia-400 to-purple-600 rounded-2xl px-6 py-3 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
+                // disabled={(() => {
+                //   // const match = url.match(/^https?:\/\/([a-z0-9-]+\.)*[a-z0-9-]+$/);
+                //   // return !match || !url.toLowerCase().includes("flexisched");
+                // })()}
+                disabled={clicking}
+                onClick={() => {
+                  setClicking(true);
+                  ClassesManager.getInstance()
+                    .scheduleEnrollment(option)
+                    .then((res) => {
+                      setEnrollmentResult(res);
+                      setClicking(false);
+                    });
+                }}
+              >
+                Confirm
+              </button>
+            </>
+          )}
         </div>
-        <p className={`text-base dark:text-gray-50 font-wsans w-fit`}>
-          {htmlDecode(option.description)}
-        </p>
-        <span className={`text-base dark:text-gray-100/60 text-gray-900/60 font-wsans w-fit flex flex-row gap-1`}>
-          {option.restrictions ? <>Group <p className={`dark:text-purple-300 text-purple-800/60 font-bold`}>{option.restrictions}</p> only</> : "No restrictions"}
-        </span>
+      </Modal>
+      <div
+        className={`flex flex-row gap-4 w-full border dark:border-gray-600/40 border-gray-400/40 hover:bg-gray-900/10 hover:border-purple-200/60 dark:hover:border-purple-800/60 rounded-2xl p-4 dark:hover:bg-gray-700/20 transition-all duration-300 cursor-pointer ${
+          !option.open ? `opacity-50 !cursor-not-allowed` : `group`
+        } ${
+          enrollment?.enrolled?.find(
+            (opt) => opt.teacher.raw === option.teacher.raw
+          )
+            ? `!bg-purple-200/20 dark:!bg-purple-800/20`
+            : ``
+        }`}
+        onClick={() => {
+          setModalOpen(true);
+        }}
+      >
+        <div
+          className={`h-auto w-0 border-2 rounded-full dark:border-gray-700 border-gray-400/40 group-hover:border-purple-400 dark:group-hover:border-purple-600 transition-all duration-200`}
+        />
+        <div className="flex flex-col items-start gap-0.5 w-full">
+          <div className={`flex flex-row w-full justify-between`}>
+            <span
+              className={`font-bold text-sm dark:text-gray-50/40 font-wsans w-fit`}
+            >
+              {option.type}
+            </span>
+            <div
+              className={`flex flex-row gap-0.5 items-center text-gray-900/50 dark:text-gray-50/50`}
+            >
+              {option.limit ? `${option.limit} students` : "N/A students"}
+              <UserGroupIcon className={`h-4 w-4`} />
+            </div>
+          </div>
+          <div className={`flex flex-row gap-2 items-center`}>
+            <div
+              className={`font-bold text-xl dark:text-gray-50 font-poppins w-fit`}
+            >
+              {option.teacher.first} {option.teacher.last}
+              {option.teacher.displayName}
+            </div>
+            <div
+              className={`rounded-full p-1 px-2.5 dark:bg-pink-800 bg-pink-300 shadow-sm`}
+            >
+              <span
+                className={`text-xs font-bold dark:text-gray-100 text-gray-700 uppercase`}
+              >
+                {option.category}
+              </span>
+            </div>
+          </div>
+          <p className={`text-base dark:text-gray-50 font-wsans w-fit`}>
+            {htmlDecode(option.description)}
+          </p>
+          <span
+            className={`text-base dark:text-gray-100/60 text-gray-900/60 font-wsans w-fit flex flex-row gap-1`}
+          >
+            {option.restrictions ? (
+              <>
+                Group{" "}
+                <p
+                  className={`dark:text-purple-300 text-purple-800/60 font-bold`}
+                >
+                  {option.restrictions}
+                </p>{" "}
+                only
+              </>
+            ) : (
+              "No restrictions"
+            )}
+          </span>
+        </div>
       </div>
-    </div>
+    </>
   );
 };

@@ -39,6 +39,7 @@ export class ClassesManager extends EventEmitter {
   optionMap: Map<string, ClassOption[]> | null | undefined;
   enrolled: ClassOption[] | null | undefined;
   default: ClassOption[] | null | undefined;
+  currentEvent: string | null | undefined;
   async loadCached() {
     const cached = await extensionStorage.get("cachedPRIMES");
     const cachedMap = await extensionStorage.get("cachedPRIMESMap");
@@ -67,6 +68,8 @@ export class ClassesManager extends EventEmitter {
       withEndIndices: true,
       withStartIndices: true,
     });
+    const event = tabledata("#studentResults thead th").eq(1).text();
+    this.currentEvent = event;
     // grab all rows from the table
     const rowdata = tabledata("#results tbody");
     // console.log(rowdata);
@@ -126,6 +129,17 @@ export class ClassesManager extends EventEmitter {
       enrolled: enrolledClass,
     });
     return { default: defaultClass, enrolled: enrolledClass };
+  }
+  async scheduleEnrollment(option: ClassOption) {
+    const origin = await extensionStorage.get("fsorigin");
+    const response = (await fetcher(`${origin}/clickToSched.php?`, {
+      method: "POST",
+      body: `flex=${encodeURIComponent(option.teacher.raw)}&day=1&period=1`,
+    }).then((res) => res.text())) as string | null;
+    console.log(response);
+    this.fetchOptions();
+    await this.fetchCurrentEnrollment();
+    return response;
   }
   static parseOption(opt: Cheerio<Element>) {
     // console.log(opt.children().eq(0), opt.html());
