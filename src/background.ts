@@ -7,7 +7,7 @@ ClassesManager.getInstance();
 UserManager.getInstance();
 console.log("Epic");
 //write a function to get the origin of a url
-const server = "http://localhost:443";
+const server = "https://api.flexischedplus.tet.moe";
 function getOrigin(url: string) {
   const urlObj = new URL(url);
   return urlObj.origin;
@@ -17,7 +17,7 @@ const cookiePuller = async (tab: chrome.tabs.Tab) => {
     url: tab.url,
   });
   if (!existingCookies.find((cookie) => cookie.name === "flexisched_session_id")) return console.log("No cookies found");
-  
+
   console.log("Cookies nom", existingCookies);
   await extensionStorage.set(
     "cookies",
