@@ -1,34 +1,29 @@
 {
-  "name": "Chrome Extension Boilerplate",
-  "description": "Chrome Extension boilerplate created with React Typescript.",
-  "manifest_version": 2,
-  "version": "1.0.0",
+  "name": "Flexisched+",
+  "description": "An improved version of Flexisched!",
+  "manifest_version": 3,
+  "version": "1.0.1",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
     "128": "icon128.png"
   },
-  "browser_action": {
+  "action": {
     "default_icon": {
       "16": "icon16.png",
       "48": "icon48.png"
     },
-    "default_popup": "popup.html"
+    "default_popup": "index.html"
   },
   "background": {
-    "scripts": [
-      "background.js"
-    ],
-    "persistent": false
+    "service_worker": "background.js"
   },
+  "permissions": ["storage", "tabs", "cookies"],
   "content_scripts": [
     {
-      "matches": [
-        "*://*/*"
-      ],
-      "js": [
-        "content.js"
-      ]
+      "matches": ["*://*/*"],
+      "js": ["content.js"]
     }
-  ]
+  ],
+  "host_permissions": ["http://*/*", "https://*/*"]
 }

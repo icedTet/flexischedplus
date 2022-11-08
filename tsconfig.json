@@ -14,5 +14,5 @@
     "include": [
         "./src/**/*",
         "src/custom.d.ts"
-    ]
+, "postcss.config.js", "postcss.config.js", "tailwind.config.js", "src/.tsx"    ]
 }

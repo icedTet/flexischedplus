@@ -4,13 +4,15 @@ const CopyPlugin = require("copy-webpack-plugin");
 
 const config = {
   entry: {
-    popup: path.join(__dirname, "src/popup.tsx"),
+    popup: path.join(__dirname, "src/index.tsx"),
+    flexischedLogin: path.join(__dirname, "src/flexischedLogin.tsx"),
     content: path.join(__dirname, "src/content.ts"),
     background: path.join(__dirname, "src/background.ts"),
   },
   output: { path: path.join(__dirname, "dist"), filename: "[name].js" },
   module: {
     rules: [
+      
       {
         test: /\.(js|jsx)$/,
         use: "babel-loader",
@@ -18,7 +20,7 @@ const config = {
       },
       {
         test: /\.css$/,
-        use: ["style-loader", "css-loader"],
+        use: ["style-loader", "css-loader", "postcss-loader"],
         exclude: /\.module\.css$/,
       },
       {
