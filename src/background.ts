@@ -66,29 +66,106 @@ const toggleCookieBlocker = async (on: boolean) => {
     })
     .catch((e) => console.warn(e));
 };
-const cookieHandler = async (cookieData: { name: string; value: string }) => {
+let lastBlocked = 0;
+const cookieHandler = async (
+  cookieData: { name: string; value: string },
+  url: string
+) => {
+  if (lastBlocked > Date.now() - 1000 * 5) return;
   console.log("Cookie handler", cookieData);
   // check if current cookie exists and is valid
-  const url = await extensionStorage.get("fsurl");
-  const domain = await extensionStorage.get("fsorigin");
   const existingCookie = await extensionStorage.get("sesscookie");
-  const req = await fetch(`${getOrigin(url!)}/dashboard.php?norecurse=1`, {
-    headers: {
-      Cookie: `flexisched_session_id=${existingCookie}`,
-    },
-  }).then((res) => res.text());
-  if (!req.includes("FlexiSCHED Login")) {
-    // cookie is valid
-    console.log("Cookie is already valid");
-    toggleCookieBlocker(true);
-    return;
+  if (existingCookie) {
+    let ruleID = ~~(Math.random() * 100000);
+    const nonce1 = nanoid();
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      addRules: [
+        {
+          id: ruleID,
+          priority: 1,
+          action: {
+            type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+            requestHeaders: [
+              {
+                header: "cookie",
+                operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+                value: `flexisched_session_id=${existingCookie}`,
+              },
+              {
+                header: "dummi1",
+                operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+                value: "dummi",
+              },
+            ],
+          },
+          condition: {
+            urlFilter: `*://*.flexisched.net/*&a=${nonce1}`,
+          },
+        },
+      ],
+    });
+
+    const req = await fetch(
+      `${getOrigin(url!)}/dashboard.php?norecurse=1&a=${nonce1}`,
+      {
+        headers: {
+          // Cookie: `flexisched_session_id=${existingCookie}`,
+        },
+        credentials: "include",
+      }
+    ).then((res) => res.text());
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [ruleID],
+    });
+    if (!req.includes("FlexiSCHED Login")) {
+      // cookie is valid
+      console.log("Cookie is already valid");
+      toggleCookieBlocker(true);
+      return;
+    }
   }
+
+  const nonce = nanoid();
+  const ruleID = ~~(Math.random() * 100000);
   // cookie is invalid, validate the new cookie
-  const req2 = await fetch(`${getOrigin(url!)}/dashboard.php?norecurse=1`, {
-    headers: {
-      Cookie: `flexisched_session_id=${cookieData.value}`,
-    },
-  }).then((res) => res.text());
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    addRules: [
+      {
+        id: ruleID,
+        priority: 1000,
+        action: {
+          type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+          requestHeaders: [
+            {
+              header: "cookie",
+              operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+              value: `flexisched_session_id=${cookieData.value}`,
+            },
+            {
+              header: "dummi69",
+              operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+              value: `${JSON.stringify(cookieData)}`,
+            },
+          ],
+        },
+        condition: {
+          urlFilter: `*:\/\/*.flexisched.net/*&c=${nonce}`,
+        },
+      },
+    ],
+  });
+  const req2 = await fetch(
+    `${getOrigin(url!)}/dashboard.php?norecurse=1&c=${nonce}`,
+    {
+      headers: {
+        // Cookie: `flexisched_session_id=${cookieData.value}`,
+      },
+      credentials: "include",
+    }
+  ).then((res) => res.text());
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: [ruleID],
+  });
   if (req2.includes("FlexiSCHED Login")) {
     // new cookie is invalid
     toggleCookieBlocker(false);
@@ -98,7 +175,7 @@ const cookieHandler = async (cookieData: { name: string; value: string }) => {
   // new cookie is valid
   //save to server
   const idtoken = await extensionStorage.get("idtoken");
-  toggleCookieBlocker(true).catch((er) => console.warn("cookieerror", er));
+
   await fetch(`${server}/storeToken`, {
     method: "POST",
     headers: {
@@ -107,11 +184,14 @@ const cookieHandler = async (cookieData: { name: string; value: string }) => {
     },
     body: JSON.stringify({
       fstoken: cookieData.value,
-      url: `${origin}/dashboard.php`,
+      url: `${getOrigin(url!)}/dashboard.php`,
     }),
   });
-
+  lastBlocked = Date.now();
   console.log("Cookies have been stored!");
+  const prom = toggleCookieBlocker(true).catch((er) =>
+    console.warn("cookieerror", er)
+  );
   // get current tab
   const currentTab = await chrome.tabs.query({
     active: true,
@@ -123,6 +203,7 @@ const cookieHandler = async (cookieData: { name: string; value: string }) => {
       url: chrome.extension.getURL("success.html"),
     });
   }
+  await prom;
   UserManager.getInstance().getUser();
   ClassesManager.getInstance()
     .fetchCurrentEnrollment()
@@ -134,12 +215,11 @@ chrome?.webRequest?.onHeadersReceived.addListener(
       (header) => header.name.toLowerCase() === "set-cookie"
     );
     if (details.url.includes("?norecurse=1")) {
-      console.log("Cookie reursion, ignoring");
       return;
     }
     if (!cookies) return;
     const [name, value] = cookies?.value?.split(";")[0].split("=")!;
-    cookieHandler({ name, value });
+    cookieHandler({ name, value }, details.url);
   },
   { urls: ["*://*.flexisched.net/*"] },
   ["extraHeaders", "responseHeaders"]
@@ -171,28 +251,41 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
   while (true) {
     console.log("Pulling latest token");
-    const cookie = (await extensionStorage.get("sesscookie")) as
-      | string
-      | undefined;
-    if (!cookie) {
-      console.log("No cookie found");
-      await new Promise((r) => setTimeout(r, 1000 * 4));
-      continue;
-    }
-    const idtoken = await extensionStorage.get("idtoken");
-    const newToken = await fetch(`${server}/getLatestToken`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `${idtoken}`,
-      },
-    }).then((r) => r.json());
+    // const cookie = (await extensionStorage.get("sesscookie")) as
+    //   | string
+    //   | undefined;
+    // if (!cookie) {
+    //   console.log("No cookie found", await extensionStorage.getAll());
+    //   await new Promise((r) => setTimeout(r, 1000 * 4));
+    //   continue;
+    // }
+    try {
+      const idtoken = await extensionStorage.get("idtoken");
+      const newToken = await fetch(`${server}/getLatestToken`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${idtoken}`,
+        },
+      })
+        .then((r) => r.json())
+        .catch((er) => console.warn(er));
+      if (newToken.token)
+        await extensionStorage.set("sesscookie", newToken.token);
+      console.log("Updated token");
+      try {
+        await ClassesManager.getInstance().fetchCurrentEnrollment();
+        await ClassesManager.getInstance().fetchOptions();
+        await UserManager.getInstance().getUser();
+      } catch (error) {
+        console.log("Error fetching data", error);
+      }
 
-    await extensionStorage.set("sesscookie", newToken.token);
-    console.log("Updated token");
-    await ClassesManager.getInstance().fetchCurrentEnrollment();
-    await ClassesManager.getInstance().fetchOptions();
-    await UserManager.getInstance().getUser();
-    await new Promise((r) => setTimeout(r, 1000 * 10));
+      await new Promise((r) => setTimeout(r, 1000 * 10));
+    } catch (error) {
+      console.warn("Error pulling latest token", error);
+      await new Promise((r) => setTimeout(r, 1000 * 4));
+    }
   }
 })();
+toggleCookieBlocker(false);

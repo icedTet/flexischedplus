@@ -1,25 +1,44 @@
+import { nanoid } from "nanoid";
 import { extensionStorage } from "./LocalStorageHelper";
-
-const cookieFormatter = (cookieArr: chrome.cookies.Cookie[]) =>
-  cookieArr
-    .map(
-      (cookie) =>
-        `${encodeURIComponent(cookie.name)}=${encodeURIComponent(cookie.value)}`
-    )
-    .join("; ");
 export const fetcher = async (
   input: RequestInfo,
   init?: RequestInit | undefined,
   withAuth = true
 ) => {
   //   console.log('[fetcher]', input, init, btype))
+  const ruleID = ~~(Math.random() * 10000000);
+  const nonce = nanoid();
   const cookie = (await extensionStorage.get("sesscookie")) as string;
-  const flexicookieURL = await extensionStorage.get("fsurl");
-  const existingCookies = await chrome.cookies.getAll({
-    url: flexicookieURL,
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    addRules: [
+      {
+        id: ruleID,
+        priority: 1,
+        action: {
+          type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+          requestHeaders: [
+            {
+              header: "cookie",
+              operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+              value: `flexisched_session_id=${cookie}`,
+            },
+            {
+              header: "dummi",
+              operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+              value: "dummi",
+            },
+          ],
+        },
+        condition: {
+          urlFilter: `*://*.flexisched.net/*b=${nonce}`,
+        },
+      },
+    ],
   });
-  const origin = await extensionStorage.get("fsorigin");
-  return await fetch(input, {
+
+  const url = new URL(input as string);
+  url.searchParams.set("b", nonce);
+  let res = await fetch(url.toString(), {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -31,6 +50,10 @@ export const fetcher = async (
         : {}),
     },
   });
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: [ruleID],
+  });
+  return res;
 
   //   console.log('Requesting', input, btype, requestBuckets))
 };
