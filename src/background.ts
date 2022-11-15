@@ -9,24 +9,96 @@ console.log("Epic");
 //write a function to get the origin of a url
 const server = "https://api.flexischedplus.tet.moe";
 function getOrigin(url: string) {
-  const urlObj = new URL(url);
-  return urlObj.origin;
+  try {
+    const urlObj = new URL(url);
+    return urlObj.origin;
+  } catch (error) {
+    console.warn("Invalid URL", url, error);
+    return "";
+  }
 }
-const cookiePuller = async (tab: chrome.tabs.Tab) => {
-  const existingCookies = await chrome.cookies.getAll({
-    url: tab.url,
-  });
-  if (!existingCookies.find((cookie) => cookie.name === "flexisched_session_id")) return console.log("No cookies found");
 
-  console.log("Cookies nom", existingCookies);
-  await extensionStorage.set(
-    "cookies",
-    JSON.parse(JSON.stringify(existingCookies))
+const dataSetter = async (tab: chrome.tabs.Tab) => {
+  const url = tab.url!;
+  await extensionStorage.set("fsorigin", getOrigin(url!));
+  await extensionStorage.set("fsurl", url);
+
+  // delete the cookies
+};
+const toggleCookieBlocker = async (on: boolean) => {
+  if (on) {
+    console.log(
+      "Cookie blocker is toggling on",
+      chrome.declarativeNetRequest.updateDynamicRules
+    );
+    return chrome.declarativeNetRequest
+      .updateDynamicRules({
+        addRules: [
+          {
+            id: 1,
+            priority: 1,
+            action: {
+              type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+              responseHeaders: [
+                {
+                  header: "set-cookie",
+                  operation:
+                    chrome.declarativeNetRequest.HeaderOperation.APPEND,
+                  value: "; Max-Age=0",
+                },
+              ],
+            },
+            condition: {
+              urlFilter: "*://*.flexisched.net/*",
+            },
+          },
+        ],
+      })
+      .catch((e) => console.warn(e));
+  }
+  console.log(
+    "Cookie blocker is going dark",
+    chrome.declarativeNetRequest.updateDynamicRules
   );
-
-  await extensionStorage.set("fsorigin", getOrigin(tab.url!));
-  await extensionStorage.set("fsurl", tab.url);
+  chrome.declarativeNetRequest
+    .updateDynamicRules({
+      removeRuleIds: [1],
+    })
+    .catch((e) => console.warn(e));
+};
+const cookieHandler = async (cookieData: { name: string; value: string }) => {
+  console.log("Cookie handler", cookieData);
+  // check if current cookie exists and is valid
+  const url = await extensionStorage.get("fsurl");
+  const domain = await extensionStorage.get("fsorigin");
+  const existingCookie = await extensionStorage.get("sesscookie");
+  const req = await fetch(`${getOrigin(url!)}/dashboard.php?norecurse=1`, {
+    headers: {
+      Cookie: `flexisched_session_id=${existingCookie}`,
+    },
+  }).then((res) => res.text());
+  if (!req.includes("FlexiSCHED Login")) {
+    // cookie is valid
+    console.log("Cookie is already valid");
+    toggleCookieBlocker(true);
+    return;
+  }
+  // cookie is invalid, validate the new cookie
+  const req2 = await fetch(`${getOrigin(url!)}/dashboard.php?norecurse=1`, {
+    headers: {
+      Cookie: `flexisched_session_id=${cookieData.value}`,
+    },
+  }).then((res) => res.text());
+  if (req2.includes("FlexiSCHED Login")) {
+    // new cookie is invalid
+    toggleCookieBlocker(false);
+    console.log("Invalid cookie, login required");
+    return;
+  }
+  // new cookie is valid
+  //save to server
   const idtoken = await extensionStorage.get("idtoken");
+  toggleCookieBlocker(true).catch((er) => console.warn("cookieerror", er));
   await fetch(`${server}/storeToken`, {
     method: "POST",
     headers: {
@@ -34,17 +106,45 @@ const cookiePuller = async (tab: chrome.tabs.Tab) => {
       Authorization: `${idtoken}`,
     },
     body: JSON.stringify({
-      fstoken: existingCookies.find((c) => c.name === "flexisched_session_id")
-        ?.value,
-      url: `${getOrigin(tab.url!)}/dashboard.php`,
+      fstoken: cookieData.value,
+      url: `${origin}/dashboard.php`,
     }),
   });
+
   console.log("Cookies have been stored!");
+  // get current tab
+  const currentTab = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  if (currentTab[0].url?.includes(`flexisched`)) {
+    chrome.extension.getURL("success.html");
+    chrome.tabs.update(currentTab[0].id!, {
+      url: chrome.extension.getURL("success.html"),
+    });
+  }
   UserManager.getInstance().getUser();
   ClassesManager.getInstance()
     .fetchCurrentEnrollment()
     .then(ClassesManager.getInstance().fetchOptions);
 };
+chrome?.webRequest?.onHeadersReceived.addListener(
+  (details) => {
+    const cookies = details.responseHeaders?.find(
+      (header) => header.name.toLowerCase() === "set-cookie"
+    );
+    if (details.url.includes("?norecurse=1")) {
+      console.log("Cookie reursion, ignoring");
+      return;
+    }
+    if (!cookies) return;
+    const [name, value] = cookies?.value?.split(";")[0].split("=")!;
+    cookieHandler({ name, value });
+  },
+  { urls: ["*://*.flexisched.net/*"] },
+  ["extraHeaders", "responseHeaders"]
+);
+
 // This file is ran as a background script
 // when the user visits a site, we want to check if they are logged in
 // and if they are, we want to send a message to the content script
@@ -56,8 +156,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     //   file: "content.js",
     // });
     console.log("Flexisched detected");
-    console.log("cookied!");
-    cookiePuller(tab);
+    dataSetter(tab);
   }
   if (changeInfo.status === "complete") {
     // chrome.tabs.sendMessage(tabId, { type: "check-login" });
@@ -70,14 +169,16 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     const idtoken = nanoid(128);
     await extensionStorage.set("idtoken", idtoken);
   }
-  setInterval(async () => {
+  while (true) {
     console.log("Pulling latest token");
-    const cookies = (await extensionStorage.get(
-      "cookies"
-    )) as chrome.cookies.Cookie[];
-    if (!cookies) return console.log("No cookies found");
-    const fscookie = cookies.find((c) => c.name === "flexisched_session_id");
-    if (!fscookie) return console.log("No flexisched cookie found");
+    const cookie = (await extensionStorage.get("sesscookie")) as
+      | string
+      | undefined;
+    if (!cookie) {
+      console.log("No cookie found");
+      await new Promise((r) => setTimeout(r, 1000 * 4));
+      continue;
+    }
     const idtoken = await extensionStorage.get("idtoken");
     const newToken = await fetch(`${server}/getLatestToken`, {
       method: "GET",
@@ -86,7 +187,12 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         Authorization: `${idtoken}`,
       },
     }).then((r) => r.json());
-    fscookie.value = newToken.token;
-    await extensionStorage.set("cookies", cookies);
-  }, 10000);
+
+    await extensionStorage.set("sesscookie", newToken.token);
+    console.log("Updated token");
+    await ClassesManager.getInstance().fetchCurrentEnrollment();
+    await ClassesManager.getInstance().fetchOptions();
+    await UserManager.getInstance().getUser();
+    await new Promise((r) => setTimeout(r, 1000 * 10));
+  }
 })();

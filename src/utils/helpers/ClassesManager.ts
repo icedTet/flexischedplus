@@ -44,6 +44,7 @@ export class ClassesManager extends EventEmitter {
     const cached = await extensionStorage.get("cachedPRIMES");
     const cachedMap = await extensionStorage.get("cachedPRIMESMap");
     const cachedEnrollment = await extensionStorage.get("cachedEnrollment");
+    const cachedEvent = await extensionStorage.get("cachedCurrentEvent");
     if (cached) {
       this.options = cached;
       this.emit("coursesUpdate", cached);
@@ -57,6 +58,10 @@ export class ClassesManager extends EventEmitter {
         enrolled: cachedEnrollment?.enrolled,
       });
     }
+    if (cachedEvent) {
+      this.currentEvent = cachedEvent;
+      this.emit("eventUpdate", cachedEvent);
+    }
   }
   async fetchOptions() {
     const origin = await extensionStorage.get("fsorigin");
@@ -68,7 +73,18 @@ export class ClassesManager extends EventEmitter {
       withEndIndices: true,
       withStartIndices: true,
     });
-    const event = tabledata("#studentResults thead th").eq(1).text();
+    const event = tabledata("#studentResults thead tr th")
+      .eq(0)
+      .html()
+      ?.replace(/(<.+?>)/g, " ");
+    console.log({
+      event,
+      data: tabledata("#studentResults thead tr").html(),
+      datachild: tabledata("#studentResults thead tr th")
+        .eq(0)
+        .html()
+        ?.replace(/(<.+?>)/g, " "),
+    });
     this.currentEvent = event;
     // grab all rows from the table
     const rowdata = tabledata("#results tbody");
@@ -99,6 +115,8 @@ export class ClassesManager extends EventEmitter {
     //   ClassesManager.parseOption(r as Element)
     // );
     this.options = classes;
+    extensionStorage.set("cachedCurrentEvent", event);
+
     extensionStorage.set("cachedPRIMES", classes);
     extensionStorage.set("cachedPRIMESMap", MapToObj(this.optionMap));
     this.emit("coursesUpdate", classes);
@@ -135,6 +153,9 @@ export class ClassesManager extends EventEmitter {
     const response = (await fetcher(`${origin}/clickToSched.php?`, {
       method: "POST",
       body: `flex=${encodeURIComponent(option.teacher.raw)}&day=1&period=1`,
+      headers:{
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
     }).then((res) => res.text())) as string | null;
     console.log(response);
     this.fetchOptions();

@@ -13,21 +13,24 @@ export const fetcher = async (
   withAuth = true
 ) => {
   //   console.log('[fetcher]', input, init, btype))
-  let cookies = null as null | chrome.cookies.Cookie[];
-  if (withAuth) {
-    cookies = (await extensionStorage.get("cookies")) ?? null;
-  }
+  const cookie = (await extensionStorage.get("sesscookie")) as string;
+  const flexicookieURL = await extensionStorage.get("fsurl");
+  const existingCookies = await chrome.cookies.getAll({
+    url: flexicookieURL,
+  });
+  const origin = await extensionStorage.get("fsorigin");
   return await fetch(input, {
     ...init,
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers || {}),
-      ...(withAuth && cookies
+      ...(withAuth && cookie
         ? {
-            Cookie: cookieFormatter(cookies),
+            Cookie: `flexisched_session_id=${cookie}`,
           }
         : {}),
     },
   });
+
   //   console.log('Requesting', input, btype, requestBuckets))
 };

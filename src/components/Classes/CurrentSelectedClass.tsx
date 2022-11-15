@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useCourseEnrollments } from "../../hooks/useCourseEnrollments";
 import { useCourseOptions } from "../../hooks/useCourseOptions";
-
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 export const CurrentSelectedClass = () => {
   const enrollment = useCourseEnrollments();
   return (
@@ -14,6 +14,21 @@ export const CurrentSelectedClass = () => {
         </span>
 
         <div className={`flex flex-col gap-1 w-full`}>
+          {!enrollment?.enrolled?.length && (
+            <div
+              className={`flex flex-row gap-2 w-full border dark:border-gray-600/40 border-gray-400/40 rounded-2xl p-4 transition-all duration-300 items-center`}
+              key={`enrollment-current-notfound`}
+            >
+              <ExclamationTriangleIcon
+                className={`w-4 h-4 dark:text-gray-50 flex-shrink-0`}
+              />
+              <span
+                className={`text-base dark:text-gray-50 font-poppins w-fit font-bold`}
+              >
+                No Class Selected
+              </span>
+            </div>
+          )}
           {enrollment?.enrolled?.map((enrollment, index) => (
             <div
               className={`flex flex-col gap-2 w-full border dark:border-gray-600/40 border-gray-400/40 rounded-2xl p-4 transition-all duration-300`}

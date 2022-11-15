@@ -1,6 +1,7 @@
 import { Switch } from "@headlessui/react";
 import * as React from "react";
 import { ClassList } from "./components/Classes/ClassList";
+import { CurrentSchedulingEvent } from "./components/Classes/CurrentPeriod";
 import { CurrentSelectedClass } from "./components/Classes/CurrentSelectedClass";
 import { DefaultSelectedClass } from "./components/Classes/DefaultSelectedClass";
 import { MonogramPFP } from "./components/Monogram";
@@ -70,12 +71,15 @@ const App = () => {
             <div
               className={`flex-grow flex flex-col gap-4 h-full justify-start`}
             >
+              <CurrentSchedulingEvent />
               <CurrentSelectedClass />
               <DefaultSelectedClass />
             </div>
           </div>
         ) : (
-          <div className={`flex flex-row flex-grow w-full justify-center items-center`}>
+          <div
+            className={`flex flex-row flex-grow w-full justify-center items-center`}
+          >
             <div
               className={`flex flex-col gap-4 justify-center items-center h-full text-lg font-bold dark:text-gray-100 max-w-[50vw]`}
             >

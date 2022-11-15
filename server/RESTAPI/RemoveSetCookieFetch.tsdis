@@ -1,0 +1,31 @@
+import { RESTMethods, RESTHandler } from "../server";
+import nfetch from "../utils/FixedNodeFetch";
+import { verifyToken } from "../utils/TetLibMini";
+import { getDataFromID } from "../utils/TokenLib";
+
+export const GetToken = {
+  path: "/fetchData",
+  method: RESTMethods.GET,
+  run: async (req, res, next) => {
+    const url = req.query.url;
+    const token = req.headers.authorization;
+    if (typeof url !== "string" || new URL(url).hostname !== "flexisched") {
+      return res.status(401).send("Invalid URL");
+    }
+    if (!token || !verifyToken(token)) {
+      return res.status(401).send("No token provided/invalid token");
+    }
+    const resp = await nfetch(url, {
+      headers: {
+        authorization: token,
+      },
+    });
+    // return the response
+    resp.headers.forEach((value, key) => {
+      res.setHeader(key, value);
+    });
+    resp.headers.delete("set-cookie");
+    return res.status(resp.status).send(await resp.text());
+  },
+} as RESTHandler;
+export default GetToken;

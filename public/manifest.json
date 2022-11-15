@@ -1,11 +1,13 @@
 {
-  "name": "Flexisched+",
+  "name": "Flexisched++",
   "description": "An improved version of Flexisched!",
   "manifest_version": 3,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "icons": {
     "16": "icon16.png",
+    "32": "icon32.png",
     "48": "icon48.png",
+    "64": "icon64.png",
     "128": "icon128.png"
   },
   "action": {
@@ -18,12 +20,29 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["storage", "tabs", "cookies"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "blockcookieset",
+        "enabled": true,
+        "path": "rules/cookieset.json"
+      }
+    ]
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "cookies",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "declarativeNetRequestWithHostAccess",
+    "webRequest"
+  ],
   "content_scripts": [
     {
       "matches": ["*://*/*"],
       "js": ["content.js"]
     }
   ],
-  "host_permissions": ["http://*/*", "https://*/*"]
+  "host_permissions": ["http://*.flexisched.net/*", "https://*.flexisched.net/*"]
 }

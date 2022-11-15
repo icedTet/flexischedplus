@@ -18,7 +18,7 @@ export const extensionStorage = {
     return new Promise((resolve, reject) => {
       chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName === "local") {
-          console.log("Storage changed", changes);
+          // console.log("Storage changed", changes);
           Object.entries(changes).map(([key, { newValue }]) => {
             pcache![key] = newValue;
             StorageUpdates.getInstance().emit("change", key, newValue);
@@ -39,7 +39,7 @@ export const extensionStorage = {
       if (!pcache) {
         pcache = await extensionStorage.getAll();
       }
-      console.log("Getting key", key,pcache);
+      // console.log("Getting key", key,pcache);
       resolve(pcache[key]);
     }) as Promise<any>;
   },

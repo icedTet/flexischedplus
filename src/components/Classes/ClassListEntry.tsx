@@ -6,7 +6,7 @@ import {
 import { UserGroupIcon } from "@heroicons/react/24/outline";
 import { useCourseEnrollments } from "../../hooks/useCourseEnrollments";
 import { Modal } from "../Modal";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 function htmlDecode(input: string) {
   var doc = new DOMParser().parseFromString(input, "text/html");
   return doc.documentElement.textContent;
@@ -20,57 +20,127 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
     null as null | string
   );
   const [clicking, setClicking] = useState(false);
+  useLayoutEffect(() => {
+    if (modalOpen) {
+      setClicking(false);
+      setEnrollmentResult(null);
+    }
+  }, [modalOpen]);
   return (
     <>
       <Modal
         visible={modalOpen}
         onClose={() => {
           setModalOpen(false);
-          setClicking(false);
-          setEnrollmentResult(null);
         }}
         className={`!p-6`}
       >
         <div className={`w-screen/2 flex flex-col gap-6 items-start`}>
           {enrollmentResult ? (
-            <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
-              {enrollmentResult}
-            </span>
+            <>
+              <div
+                className={`flex flex-col gap-3 items-start w-full text-base font-medium`}
+              >
+                <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
+                  Enrollment Confirmation
+                </span>
+                <span className={`dark:text-gray-100 text-gray-800 `}>
+                  {enrollmentResult}
+                </span>
+              </div>
+              <div className={`flex flex-row gap-4`}>
+                <button
+                  className={`bg-gradient-to-br from-fuchsia-400 to-purple-600 rounded-2xl px-6 py-3 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
+                  onClick={() => {
+                    setModalOpen(false);
+                  }}
+                >
+                  Ok
+                </button>
+              </div>
+            </>
           ) : (
             <>
               <div
                 className={`flex flex-col gap-3 items-start w-full text-base font-medium`}
               >
                 {" "}
-                <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
-                  Enroll in
-                </span>
-                <b
-                  className={`dark:text-fuchsia-500 text-purple-800 underline transition-all cursor-pointer`}
-                >
-                  {option.teacher.first} {option.teacher.last}{" "}
-                  {option.teacher.displayName}&apos;s class?
-                </b>
+                {option.open ? (
+                  <>
+                    <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
+                      Enrollment Confirmation
+                    </span>
+                    <span className={`dark:text-gray-100 text-gray-800 `}>
+                      Are you sure you want to enroll in{" "}
+                      <b
+                        className={`dark:text-fuchsia-500 text-purple-800 transition-all`}
+                      >
+                        {option.teacher.first} {option.teacher.last}
+                        {option.teacher.displayName}&apos;s class
+                      </b>
+                      ?
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
+                      Unable to Enroll
+                    </span>
+                    <span className={`dark:text-gray-100 text-gray-800 `}>
+                      You cannot enroll in{" "}
+                      <b
+                        className={`dark:text-fuchsia-500 text-purple-800 transition-all`}
+                      >
+                        {option.teacher.first} {option.teacher.last}
+                        {option.teacher.displayName}&apos;s class
+                      </b>
+                      .
+                    </span>
+                  </>
+                )}
               </div>
-              <button
-                className={`bg-gradient-to-br from-fuchsia-400 to-purple-600 rounded-2xl px-6 py-3 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
-                // disabled={(() => {
-                //   // const match = url.match(/^https?:\/\/([a-z0-9-]+\.)*[a-z0-9-]+$/);
-                //   // return !match || !url.toLowerCase().includes("flexisched");
-                // })()}
-                disabled={clicking}
-                onClick={() => {
-                  setClicking(true);
-                  ClassesManager.getInstance()
-                    .scheduleEnrollment(option)
-                    .then((res) => {
-                      setEnrollmentResult(res);
-                      setClicking(false);
-                    });
-                }}
-              >
-                Confirm
-              </button>
+              <div className={`flex flex-row gap-4`}>
+                {option.open ? (
+                  <>
+                    <button
+                      className={`bg-gradient-to-br from-fuchsia-400 to-purple-600 rounded-2xl px-6 py-3 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
+                      // disabled={(() => {
+                      //   // const match = url.match(/^https?:\/\/([a-z0-9-]+\.)*[a-z0-9-]+$/);
+                      //   // return !match || !url.toLowerCase().includes("flexisched");
+                      // })()}
+                      disabled={clicking}
+                      onClick={() => {
+                        setClicking(true);
+                        ClassesManager.getInstance()
+                          .scheduleEnrollment(option)
+                          .then((res) => {
+                            setEnrollmentResult(res);
+                            setClicking(false);
+                          });
+                      }}
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      className={`text-gray-900/20 dark:text-gray-100/20 hover:text-gray-800/20 dark:hover:text-gray-50/30 transition-all font-semibold`}
+                      onClick={() => {
+                        setModalOpen(false);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className={`bg-gradient-to-br from-fuchsia-400 to-purple-600 rounded-2xl px-6 py-3 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
+                    onClick={() => {
+                      setModalOpen(false);
+                    }}
+                  >
+                    Ok
+                  </button>
+                )}
+              </div>
             </>
           )}
         </div>

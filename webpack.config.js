@@ -8,11 +8,11 @@ const config = {
     flexischedLogin: path.join(__dirname, "src/flexischedLogin.tsx"),
     content: path.join(__dirname, "src/content.ts"),
     background: path.join(__dirname, "src/background.ts"),
+    success: path.join(__dirname, "src/success.tsx"),
   },
   output: { path: path.join(__dirname, "dist"), filename: "[name].js" },
   module: {
     rules: [
-      
       {
         test: /\.(js|jsx)$/,
         use: "babel-loader",
@@ -73,6 +73,7 @@ const config = {
       patterns: [{ from: "public", to: "." }],
     }),
   ],
+  devtool: "source-map",
 };
 
 module.exports = config;
