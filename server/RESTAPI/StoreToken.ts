@@ -17,6 +17,18 @@ export const StoreToken = {
     }
     // check if token existed
     const existing = await getDataFromID(token);
+    if (existing) {
+      // check if token is valid
+      const req = await fetch(`${existing.dashboardURL}`, {
+        headers: {
+          Cookie: `flexisched_session_id=${existing.token}`,
+        },
+      }).then((res) => res.text());
+      if (!req.includes("<title>FlexiSCHED Login</title>") && !req.includes("Your session has expired. You will be redirected to login.")) {
+        // token is already valid, ignore request to store
+        return res.status(201).send("Token already valid");
+      }
+    }
     // store db token
     await setDataFromID(token, {
       token: fstoken,

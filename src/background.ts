@@ -18,13 +18,6 @@ function getOrigin(url: string) {
   }
 }
 
-const dataSetter = async (tab: chrome.tabs.Tab) => {
-  const url = tab.url!;
-  await extensionStorage.set("fsorigin", getOrigin(url!));
-  await extensionStorage.set("fsurl", url);
-
-  // delete the cookies
-};
 const toggleCookieBlocker = async (on: boolean) => {
   if (on) {
     console.log(
@@ -217,6 +210,8 @@ chrome?.webRequest?.onHeadersReceived.addListener(
     if (details.url.includes("?norecurse=1")) {
       return;
     }
+    extensionStorage.set("fsorigin", getOrigin(details.url!));
+    extensionStorage.set("fsurl", details.url);
     if (!cookies) return;
     const [name, value] = cookies?.value?.split(";")[0].split("=")!;
     cookieHandler({ name, value }, details.url);
@@ -229,19 +224,19 @@ chrome?.webRequest?.onHeadersReceived.addListener(
 // when the user visits a site, we want to check if they are logged in
 // and if they are, we want to send a message to the content script
 // to update the UI
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (getOrigin(tab.url!).toLowerCase().includes("flexisched")) {
-    // override the page
-    // chrome.tabs.executeScript(tabId, {
-    //   file: "content.js",
-    // });
-    console.log("Flexisched detected");
-    dataSetter(tab);
-  }
-  if (changeInfo.status === "complete") {
-    // chrome.tabs.sendMessage(tabId, { type: "check-login" });
-  }
-});
+// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+//   if (getOrigin(tab.url!).toLowerCase().includes("flexisched")) {
+//     // override the page
+//     // chrome.tabs.executeScript(tabId, {
+//     //   file: "content.js",
+//     // });
+//     console.log("Flexisched detected");
+//     dataSetter(tab);
+//   }
+//   if (changeInfo.status === "complete") {
+//     // chrome.tabs.sendMessage(tabId, { type: "check-login" });
+//   }
+// });
 (async () => {
   const idtoken = await extensionStorage.get("idtoken");
   if (!idtoken) {
