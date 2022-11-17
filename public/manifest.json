@@ -32,8 +32,7 @@
   "permissions": [
     "storage",
     "tabs",
-    "declarativeNetRequestWithHostAccess",
-    "webRequest"
+    "declarativeNetRequestWithHostAccess"
   ],
   "content_scripts": [
     {
