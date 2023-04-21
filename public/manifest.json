@@ -2,7 +2,7 @@
   "name": "Flexisched++",
   "description": "An improved version of Flexisched!",
   "manifest_version": 3,
-  "version": "1.2.0",
+  "version": "0.0.1",
   "icons": {
     "16": "icon16.png",
     "32": "icon32.png",
