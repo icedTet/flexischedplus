@@ -96,7 +96,7 @@ const App = () => {
                   </a>
                 </div>
                 <span
-                  className={`text-sm font-wsans font-medium dark:text-gray-300 text-gray-500`}
+                  className={`text-sm font-wsans font-medium dark:text-gray-500 text-gray-300`}
                 >
                   FlexiSched++ v0.0.1
                 </span>

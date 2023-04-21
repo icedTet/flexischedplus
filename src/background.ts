@@ -121,14 +121,6 @@ const cookieHandler = async (
     }`,
   });
 
-  // announce done!
-  // chrome.notifications.create(nanoid(23), {
-  //   type: "basic",
-  //   iconUrl: "icon64.png",
-  //   title: "[Flexisched++] You're All Set!",
-  //   message: "You're all set! You can now use Flexisched++",
-  //   priority: 2,
-  // });
 };
 
 // This file is ran as a background script
