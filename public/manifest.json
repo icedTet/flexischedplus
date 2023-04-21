@@ -22,7 +22,8 @@
   },
   "permissions": [
     "storage",
-    "webRequest"
+    "webRequest",
+    "notifications"
   ],
   "content_scripts": [
     {

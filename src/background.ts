@@ -17,11 +17,13 @@ function getOrigin(url: string) {
     return "";
   }
 }
+//Important!
 chrome?.webRequest?.onHeadersReceived.addListener(
   (details) => {
     const cookies = details.responseHeaders?.find(
       (header) => header.name.toLowerCase() === "set-cookie"
     );
+
     if (details.url?.includes("?norecurse=1")) {
       return;
     }
@@ -65,7 +67,9 @@ const cookieHandler = async (
   const ruleID = ~~(Math.random() * 100000);
   // cookie is invalid, validate the new cookie
   const req2 = await fetch(
-    `${getOrigin(url!)}/dashboard.php?norecurse=1&c=${nonce}&dc=${existingCookie}`,
+    `${getOrigin(
+      url!
+    )}/dashboard.php?norecurse=1&c=${nonce}&dc=${existingCookie}`,
     {
       headers: {
         Cookie: `flexisched_session_id=${cookieData.value}`,
@@ -94,10 +98,23 @@ const cookieHandler = async (
     }),
   });
   // get current tab
-  UserManager.getInstance().getUser();
-  ClassesManager.getInstance()
-    .fetchCurrentEnrollment()
-    .then(ClassesManager.getInstance().fetchOptions);
+  await Promise.all([
+    UserManager.getInstance().getUser(),
+    ClassesManager.getInstance()
+      .fetchCurrentEnrollment()
+      .then(ClassesManager.getInstance().fetchOptions.bind(ClassesManager.getInstance())),
+  ]);
+  console.log("Cookie is valid, saving to server");
+  chrome.tabs.create({ url: "success.html" });
+
+  // announce done!
+  // chrome.notifications.create(nanoid(23), {
+  //   type: "basic",
+  //   iconUrl: "icon64.png",
+  //   title: "[Flexisched++] You're All Set!",
+  //   message: "You're all set! You can now use Flexisched++",
+  //   priority: 2,
+  // });
 };
 
 // This file is ran as a background script
