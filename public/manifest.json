@@ -20,18 +20,8 @@
   "background": {
     "service_worker": "background.js"
   },
-  "declarative_net_request": {
-    "rule_resources": [
-      {
-        "id": "blockcookieset",
-        "enabled": true,
-        "path": "rules/cookieset.json"
-      }
-    ]
-  },
   "permissions": [
     "storage",
-    "declarativeNetRequestWithHostAccess",
     "webRequest"
   ],
   "content_scripts": [

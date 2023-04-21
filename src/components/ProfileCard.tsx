@@ -5,6 +5,7 @@ import { Modal } from "./Modal";
 import { MonogramPFP } from "./Monogram";
 import { GroupProfileCardList } from "./ProfileCardGroupInfo";
 import TextBox from "./TextBox";
+import { extensionStorage } from "../utils/helpers/LocalStorageHelper";
 
 export const ProfileCard = () => {
   const user = useUserAuth();
@@ -32,6 +33,15 @@ export const ProfileCard = () => {
                 {user?.firstName} {user?.lastName}
               </div>
               <GroupProfileCardList />
+              <button
+                className={`font-poppins font-bold text-xs text-gray-100 bg-gradient-to-r from-fuchsia-500 to-purple-500 px-4 py-3 rounded-2x mt-8 rounded-2xl`}
+                onClick={() => {
+                  extensionStorage.clear();
+                  window.location.reload();
+                }}
+              >
+                Log Out
+              </button>
             </div>
           ) : (
             <>
@@ -53,11 +63,11 @@ export const ProfileCard = () => {
                     className={`flex flex-col gap-3 items-start w-full text-base font-medium`}
                   >
                     {" "}
-                    <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
+                    <span className={`dark:text-gray-100/50 text-gray-900/40 `}>
                       Enter the URL of your FlexiSched instance. eg.
                     </span>
                     <a
-                      className={`hover:!text-fuchsia-500 text-purple-800 dark:text-purple-400/30 underline transition-all cursor-pointer`}
+                      className={`hover:!text-fuchsia-500 text-purple-800 dark:text-purple-400 dark:hover:!text-fuchsia-300 underline transition-all cursor-pointer`}
                     >
                       https://gunn.flexisched.net
                     </a>
@@ -82,7 +92,7 @@ export const ProfileCard = () => {
                     })()}
                     onClick={() => {
                       chrome.tabs.create({
-                        url,
+                        url: url.match(/dashboard\.php/) ? url : url + "/dashboard.php",
                       });
                     }}
                   >

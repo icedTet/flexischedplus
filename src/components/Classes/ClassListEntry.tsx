@@ -41,7 +41,7 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
               <div
                 className={`flex flex-col gap-3 items-start w-full text-base font-medium`}
               >
-                <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
+                <span className={`dark:text-gray-100/50 text-gray-900/40 `}>
                   Enrollment Confirmation
                 </span>
                 <span className={`dark:text-gray-100 text-gray-800 `}>
@@ -50,7 +50,7 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
               </div>
               <div className={`flex flex-row gap-4`}>
                 <button
-                  className={`bg-gradient-to-br from-fuchsia-400 to-purple-600 rounded-2xl px-6 py-3 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
+                  className={`bg-fuchsia-500 rounded-2xl px-6 py-3 hover:bg-fuchsia-700 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
                   onClick={() => {
                     setModalOpen(false);
                   }}
@@ -67,7 +67,7 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
                 {" "}
                 {option.open ? (
                   <>
-                    <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
+                    <span className={`dark:text-gray-100/50 text-gray-900/40 `}>
                       Enrollment Confirmation
                     </span>
                     <span className={`dark:text-gray-100 text-gray-800 `}>
@@ -83,7 +83,7 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
                   </>
                 ) : (
                   <>
-                    <span className={`dark:text-gray-100/30 text-gray-900/20 `}>
+                    <span className={`dark:text-gray-100/50 text-gray-900/40 `}>
                       Unable to Enroll
                     </span>
                     <span className={`dark:text-gray-100 text-gray-800 `}>
@@ -103,7 +103,7 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
                 {option.open ? (
                   <>
                     <button
-                      className={`bg-gradient-to-br from-fuchsia-400 to-purple-600 rounded-2xl px-6 py-3 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
+                      className={`bg-fuchsia-500 rounded-2xl px-6 py-3 hover:bg-fuchsia-700 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
                       // disabled={(() => {
                       //   // const match = url.match(/^https?:\/\/([a-z0-9-]+\.)*[a-z0-9-]+$/);
                       //   // return !match || !url.toLowerCase().includes("flexisched");
@@ -122,7 +122,7 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
                       Confirm
                     </button>
                     <button
-                      className={`text-gray-900/20 dark:text-gray-100/20 hover:text-gray-800/20 dark:hover:text-gray-50/30 transition-all font-semibold`}
+                      className={`text-gray-900/40 dark:text-gray-100/20 hover:text-gray-800/40 hover:bg-gray-500/20 dark:hover:text-gray-50/30 transition-all font-semibold rounded-2xl px-6 py-3`}
                       onClick={() => {
                         setModalOpen(false);
                       }}
@@ -132,7 +132,7 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
                   </>
                 ) : (
                   <button
-                    className={`bg-gradient-to-br from-fuchsia-400 to-purple-600 rounded-2xl px-6 py-3 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
+                    className={`bg-fuchsia-500 rounded-2xl px-6 py-3 hover:bg-fuchsia-700 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
                     onClick={() => {
                       setModalOpen(false);
                     }}
@@ -146,7 +146,7 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
         </div>
       </Modal>
       <div
-        className={`flex flex-row gap-4 w-full border dark:border-gray-600/40 border-gray-400/40 hover:bg-gray-900/10 hover:border-purple-200/60 dark:hover:border-purple-800/60 rounded-2xl p-4 dark:hover:bg-gray-700/20 transition-all duration-300 cursor-pointer ${
+        className={`flex flex-row gap-4 w-full border dark:border-gray-600/40 border-gray-400/40 hover:bg-gray-900/10 hover:border-purple-200 dark:hover:border-purple-400 rounded-2xl p-4 dark:hover:bg-gray-700/20 transition-all duration-300 cursor-pointer ${
           !option.open ? `opacity-50 !cursor-not-allowed` : `group`
         } ${
           enrollment?.enrolled?.find(
@@ -160,7 +160,7 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
         }}
       >
         <div
-          className={`h-auto w-0 border-2 rounded-full dark:border-gray-700 border-gray-400/40 group-hover:border-purple-400 dark:group-hover:border-purple-600 transition-all duration-200`}
+          className={`h-auto w-0 border-2 rounded-full dark:border-gray-700 border-gray-400/40 group-hover:border-purple-400 dark:group-hover:border-purple-400 transition-all duration-200`}
         />
         <div className="flex flex-col items-start gap-0.5 w-full">
           <div className={`flex flex-row w-full justify-between`}>

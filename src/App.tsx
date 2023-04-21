@@ -74,6 +74,33 @@ const App = () => {
               <CurrentSchedulingEvent />
               <CurrentSelectedClass />
               <DefaultSelectedClass />
+              <div
+                className={`flex flex-grow items-end justify-end p-2 pb-6 flex-col`}
+              >
+                <div className={`flex flex-row gap-2`}>
+                  <span
+                    className={`text-sm font-wsans font-medium dark:text-gray-300 text-gray-500 `}
+                  >
+                    Made with ❤️ by{" "}
+                  </span>
+                  <a
+                    href={"https://tet.moe"}
+                    target={"_blank"}
+                    rel={"noreferrer"}
+                  >
+                    <span
+                      className={`text-sm font-wsans font-medium dark:text-purple-400 text-purple-700 underline bg-clip-text dark:hover:text-fuchsia-300 hover:text-purple-500 transition-all duration-300`}
+                    >
+                      Tet
+                    </span>
+                  </a>
+                </div>
+                <span
+                  className={`text-sm font-wsans font-medium dark:text-gray-300 text-gray-500`}
+                >
+                  FlexiSched++ v0.0.1
+                </span>
+              </div>
             </div>
           </div>
         ) : (
@@ -81,12 +108,10 @@ const App = () => {
             className={`flex flex-row flex-grow w-full justify-center items-center`}
           >
             <div
-              className={`flex flex-col gap-4 justify-center items-center h-full text-lg font-bold dark:text-gray-100 max-w-[50vw]`}
+              className={`flex flex-col gap-4 justify-center items-center h-full text-xl font-medium dark:text-gray-100 max-w-[50vw]`}
             >
-              Hover over the{" "}
-              <MonogramPFP firstName={"?"} className={"!text-base w-10 h-10"} />{" "}
-              icon in the top left corner of the extension and authenticate
-              FlexiSched to get started!
+              Hover over the icon in the top left corner of the extension and
+              authenticate FlexiSched to get started!
             </div>
           </div>
         )}

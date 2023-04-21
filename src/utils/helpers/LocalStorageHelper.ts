@@ -45,13 +45,23 @@ export const extensionStorage = {
   },
   set: (key: string, value: any) => {
     return new Promise((resolve, reject) => {
-      
       chrome.storage.local.set({ [key]: value }, () => {
         console.log("Storage set", key, value);
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
         }
         pcache![key] = value;
+        resolve(true);
+      });
+    }) as Promise<boolean>;
+  },
+  clear: () => {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.clear(() => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        }
+        pcache = {};
         resolve(true);
       });
     }) as Promise<boolean>;

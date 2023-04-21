@@ -17,151 +17,64 @@ function getOrigin(url: string) {
     return "";
   }
 }
-
-const toggleCookieBlocker = async (on: boolean) => {
-  if (on) {
-    console.log(
-      "Cookie blocker is toggling on",
-      chrome.declarativeNetRequest.updateDynamicRules
+chrome?.webRequest?.onHeadersReceived.addListener(
+  (details) => {
+    const cookies = details.responseHeaders?.find(
+      (header) => header.name.toLowerCase() === "set-cookie"
     );
-    return chrome.declarativeNetRequest
-      .updateDynamicRules({
-        addRules: [
-          {
-            id: 1,
-            priority: 1,
-            action: {
-              type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-              responseHeaders: [
-                {
-                  header: "set-cookie",
-                  operation:
-                    chrome.declarativeNetRequest.HeaderOperation.APPEND,
-                  value: "; Max-Age=0",
-                },
-              ],
-            },
-            condition: {
-              urlFilter: "*://*.flexisched.net/*",
-            },
-          },
-        ],
-      })
-      .catch((e) => console.warn(e));
-  }
-  console.log(
-    "Cookie blocker is going dark",
-    chrome.declarativeNetRequest.updateDynamicRules
-  );
-  chrome.declarativeNetRequest
-    .updateDynamicRules({
-      removeRuleIds: [1],
-    })
-    .catch((e) => console.warn(e));
-};
-let lastBlocked = 0;
+    if (details.url?.includes("?norecurse=1")) {
+      return;
+    }
+    // read http-only cookie
+    extensionStorage.set("fsorigin", getOrigin(details.url!));
+    extensionStorage.set("fsurl", details.url);
+    if (!cookies) return;
+    const [name, value] = cookies?.value?.split(";")[0].split("=")!;
+    cookieHandler({ name, value }, details.url);
+  },
+  { urls: ["https://*.flexisched.net/dashboard.php"] },
+  ["extraHeaders", "responseHeaders"]
+);
+
 const cookieHandler = async (
   cookieData: { name: string; value: string },
   url: string
 ) => {
-  if (lastBlocked > Date.now() - 1000 * 5) return;
-  console.log("Cookie handler", cookieData);
-  // check if current cookie exists and is valid
   const existingCookie = await extensionStorage.get("sesscookie");
+  // check if existing cookie is valid.
   if (existingCookie) {
-    let ruleID = ~~(Math.random() * 100000);
     const nonce1 = nanoid();
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      addRules: [
-        {
-          id: ruleID,
-          priority: 1,
-          action: {
-            type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-            requestHeaders: [
-              {
-                header: "cookie",
-                operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                value: `flexisched_session_id=${existingCookie}`,
-              },
-              {
-                header: "dummi1",
-                operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                value: "dummi",
-              },
-            ],
-          },
-          condition: {
-            urlFilter: `*://*.flexisched.net/*&a=${nonce1}`,
-          },
-        },
-      ],
-    });
 
     const req = await fetch(
       `${getOrigin(url!)}/dashboard.php?norecurse=1&a=${nonce1}`,
       {
         headers: {
-          // Cookie: `flexisched_session_id=${existingCookie}`,
+          Cookie: `flexisched_session_id=${existingCookie}`,
         },
         credentials: "include",
       }
     ).then((res) => res.text());
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: [ruleID],
-    });
     if (!req.includes("FlexiSCHED Login")) {
       // cookie is valid
       console.log("Cookie is already valid");
-      toggleCookieBlocker(true);
       return;
     }
   }
-
+  // check if new cookie is valid
   const nonce = nanoid();
   const ruleID = ~~(Math.random() * 100000);
   // cookie is invalid, validate the new cookie
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    addRules: [
-      {
-        id: ruleID,
-        priority: 1000,
-        action: {
-          type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-          requestHeaders: [
-            {
-              header: "cookie",
-              operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-              value: `flexisched_session_id=${cookieData.value}`,
-            },
-            {
-              header: "dummi69",
-              operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-              value: `${JSON.stringify(cookieData)}`,
-            },
-          ],
-        },
-        condition: {
-          urlFilter: `*:\/\/*.flexisched.net/*&c=${nonce}`,
-        },
-      },
-    ],
-  });
   const req2 = await fetch(
-    `${getOrigin(url!)}/dashboard.php?norecurse=1&c=${nonce}`,
+    `${getOrigin(url!)}/dashboard.php?norecurse=1&c=${nonce}&dc=${existingCookie}`,
     {
       headers: {
-        // Cookie: `flexisched_session_id=${cookieData.value}`,
+        Cookie: `flexisched_session_id=${cookieData.value}`,
       },
       credentials: "include",
     }
   ).then((res) => res.text());
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [ruleID],
-  });
   if (req2.includes("FlexiSCHED Login")) {
     // new cookie is invalid
-    toggleCookieBlocker(false);
     console.log("Invalid cookie, login required");
     return;
   }
@@ -180,45 +93,12 @@ const cookieHandler = async (
       url: `${getOrigin(url!)}/dashboard.php`,
     }),
   });
-  lastBlocked = Date.now();
-  console.log("Cookies have been stored!");
-  const prom = toggleCookieBlocker(true).catch((er) =>
-    console.warn("cookieerror", er)
-  );
   // get current tab
-  const currentTab = await chrome.tabs.query({
-    active: true,
-    currentWindow: true,
-  });
-  if (currentTab[0].url?.includes(`flexisched`)) {
-    chrome.extension.getURL("success.html");
-    chrome.tabs.update(currentTab[0].id!, {
-      url: chrome.extension.getURL("success.html"),
-    });
-  }
-  await prom;
   UserManager.getInstance().getUser();
   ClassesManager.getInstance()
     .fetchCurrentEnrollment()
     .then(ClassesManager.getInstance().fetchOptions);
 };
-chrome?.webRequest?.onHeadersReceived.addListener(
-  (details) => {
-    const cookies = details.responseHeaders?.find(
-      (header) => header.name.toLowerCase() === "set-cookie"
-    );
-    if (details.url.includes("?norecurse=1")) {
-      return;
-    }
-    extensionStorage.set("fsorigin", getOrigin(details.url!));
-    extensionStorage.set("fsurl", details.url);
-    if (!cookies) return;
-    const [name, value] = cookies?.value?.split(";")[0].split("=")!;
-    cookieHandler({ name, value }, details.url);
-  },
-  { urls: ["*://*.flexisched.net/*"] },
-  ["extraHeaders", "responseHeaders"]
-);
 
 // This file is ran as a background script
 // when the user visits a site, we want to check if they are logged in
@@ -246,14 +126,6 @@ chrome?.webRequest?.onHeadersReceived.addListener(
   }
   while (true) {
     console.log("Pulling latest token");
-    // const cookie = (await extensionStorage.get("sesscookie")) as
-    //   | string
-    //   | undefined;
-    // if (!cookie) {
-    //   console.log("No cookie found", await extensionStorage.getAll());
-    //   await new Promise((r) => setTimeout(r, 1000 * 4));
-    //   continue;
-    // }
     try {
       const idtoken = await extensionStorage.get("idtoken");
       const newToken = await fetch(`${server}/getLatestToken`, {
@@ -283,4 +155,3 @@ chrome?.webRequest?.onHeadersReceived.addListener(
     }
   }
 })();
-toggleCookieBlocker(false);

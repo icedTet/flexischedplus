@@ -42,9 +42,9 @@ const importAllHandlers = async (path: string, failedImports: string[]) => {
       if ((await lstat(`${path}/${file}`)).isDirectory()) {
         console.log(`Importing Folder ${path}/${file}`);
         return await importAllHandlers(`${path}/${file}`, failedImports);
-      }
+      } 
       if (!file.endsWith(".ts") && !file.endsWith(".js")) {
-        return;
+        return
       }
       import(`${path}/${file}`)
         .then((module) => {

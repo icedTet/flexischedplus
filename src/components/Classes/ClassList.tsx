@@ -47,7 +47,7 @@ export const ClassList = () => {
       <input
         type="text"
         placeholder="Search"
-        className={`w-full h-12 dark:bg-gray-800 shadow-inner border dark:border-gray-100/20 !outline-none focus:ring-1 dark:focus:bg-gray-850 dark:ring-gray-100/20 rounded-xl px-4 dark:text-gray-100 font-wsans text-lg transition-all duration-300`}
+        className={`w-full h-12 dark:bg-gray-800 shadow-inner border dark:border-gray-100/20 !outline-none focus:ring-1 ring-purple-400 dark:focus:bg-gray-850 rounded-xl px-4 dark:text-gray-100 font-wsans text-lg transition-all duration-300`}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />

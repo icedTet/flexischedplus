@@ -97,7 +97,7 @@ export const TextBox = (props: TextBoxProps) => {
           } ${
             props.transparent &&
             "!bg-opacity-0 opacity-70 backdrop-blur-md !drop-shadow-none focus:!bg-opacity-40 "
-          } focus:dark:drop-shadow-xl dark:text-gray-200 dark:drop-shadow-md drop-shadow-sm hover:drop-shadow-md focus:drop-shadow-md focus:border-purple-400 border-transparent transition-all duration-300 !border-4 !outline-none`}
+          } focus:dark:drop-shadow-xl dark:text-gray-200 dark:drop-shadow-md drop-shadow-sm hover:drop-shadow-md focus:drop-shadow-md focus:border-purple-400 border-transparent transition-all duration-300 !border-4 !outline-none focus:!outline`}
           style={
             {
               "--tw-ring-color": props.ringColor || "",

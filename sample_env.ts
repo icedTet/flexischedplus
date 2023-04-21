@@ -7,5 +7,4 @@ export const env = {
     keyPath: "", //Path to HTTPS private key
     certPath: "", //Path to HTTP private key
   }, //Can also be set to null if you don't want to use HTTPS
-  
 };
