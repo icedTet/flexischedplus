@@ -84,8 +84,12 @@ const cookieHandler = async (
   }
   // new cookie is valid
   //save to server
-  const idtoken = await extensionStorage.get("idtoken");
-
+  let idtoken = await extensionStorage.get("idtoken");
+  if (!idtoken) {
+    // generate a new id token
+    idtoken = nanoid(128);
+    await extensionStorage.set("idtoken", idtoken);
+  }
   await fetch(`${server}/storeToken`, {
     method: "POST",
     headers: {
@@ -102,10 +106,20 @@ const cookieHandler = async (
     UserManager.getInstance().getUser(),
     ClassesManager.getInstance()
       .fetchCurrentEnrollment()
-      .then(ClassesManager.getInstance().fetchOptions.bind(ClassesManager.getInstance())),
+      .then(
+        ClassesManager.getInstance().fetchOptions.bind(
+          ClassesManager.getInstance()
+        )
+      ),
   ]);
   console.log("Cookie is valid, saving to server");
-  chrome.tabs.create({ url: "success.html" });
+  chrome.tabs.create({
+    url: `success.html${
+      (await extensionStorage.get("theme")) === "dark"
+        ? `?theme=dark`
+        : `?theme=light`
+    }`,
+  });
 
   // announce done!
   // chrome.notifications.create(nanoid(23), {
