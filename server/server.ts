@@ -5,7 +5,7 @@ import cors from "cors";
 import { MongoClient } from "mongodb";
 
 import { env } from "./../env";
-import { readFileSync } from "fs";
+import { read, readFileSync, watch } from "fs";
 import { lstat, readdir } from "fs/promises";
 import { TokenRefresher } from "./utils/TokenRefresher";
 declare global {
@@ -83,7 +83,7 @@ MongoConnection.connect().then(async (db) => {
   } else {
     console.log("Found usertokens collection");
   }
-  TokenRefresher.getInstance()
+  TokenRefresher.getInstance();
   globalThis.MongoDB = db;
   server.use(
     cors({
@@ -102,17 +102,27 @@ MongoConnection.connect().then(async (db) => {
   //Import all REST Endpoints
 
   if (env?.webserver) {
-    const httpsServer = https.createServer(
-      {
-        //@ts-ignore
+    function readCertsSync() {
+      return {
         key: readFileSync(env.webserver?.keyPath),
-        //@ts-ignore
         cert: readFileSync(env.webserver?.certPath),
-      },
-      server
-    );
+      };
+    }
+
+    // Refresh httpd's certs when certs change on disk. The timeout stuff
+    // "ensures" that all 3 relevant files are updated, and accounts for
+    // sometimes trigger-happy fs.watch.
+
+    const httpsServer = https.createServer(readCertsSync(), server);
     httpsServer.listen(env.port, () => {
       console.log(`Listening on port ${env.port}`);
+    });
+    let waitForCertAndFullChainToGetUpdatedTooTimeout: NodeJS.Timeout;
+    watch(env.webserver?.keyPath, () => {
+      clearTimeout(waitForCertAndFullChainToGetUpdatedTooTimeout);
+      waitForCertAndFullChainToGetUpdatedTooTimeout = setTimeout(() => {
+        httpsServer.setSecureContext(readCertsSync());
+      }, 5000);
     });
   } else {
     console.log(`HTTP Server running on port ${env.port}`);
