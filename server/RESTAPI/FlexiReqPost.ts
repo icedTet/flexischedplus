@@ -29,7 +29,7 @@ export const FlexiReq = {
     if (resText.includes("<title>FlexiSCHED Login</title>")) {
       return res.status(401).send("Outdated token");
     }
-    return res.status(responseData.status).send(responseData);
+    return res.status(responseData.status).send(resText);
   },
 } as RESTHandler;
 export default FlexiReq;

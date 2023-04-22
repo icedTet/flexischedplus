@@ -42,25 +42,22 @@ const cookieHandler = async (
   cookieData: { name: string; value: string },
   url: string
 ) => {
-  const existingCookie = await extensionStorage.get("sesscookie");
+  const existingCookie = await extensionStorage.get("idtoken");
   // check if existing cookie is valid.
   if (existingCookie) {
     const nonce1 = nanoid();
 
     const req = await fetch(
-      `${getOrigin(url!)}/dashboard.php?norecurse=1&a=${nonce1}`,
+      `${server}/flexiRequest/dashboard.php?norecurse=1&a=${nonce1}`,
       {
         headers: {
-          Cookie: `flexisched_session_id=${existingCookie}`,
+          Authorization: `${existingCookie}`,
+          "Content-Type": "application/json",
         },
-        credentials: "include",
       }
-    ).then((res) => res.text());
-    if (!req.includes("FlexiSCHED Login")) {
-      // cookie is valid
-      console.log("Cookie is already valid");
-      return;
-    }
+    );
+    if (req.ok)
+      return console.log("Existing cookie is valid, no need to update");
   }
   // check if new cookie is valid
   const nonce = nanoid();
@@ -69,13 +66,7 @@ const cookieHandler = async (
   const req2 = await fetch(
     `${getOrigin(
       url!
-    )}/dashboard.php?norecurse=1&c=${nonce}&dc=${existingCookie}`,
-    {
-      headers: {
-        Cookie: `flexisched_session_id=${cookieData.value}`,
-      },
-      credentials: "include",
-    }
+    )}/dashboard.php?norecurse=1&c=${nonce}&dc=${existingCookie}`
   ).then((res) => res.text());
   if (req2.includes("FlexiSCHED Login")) {
     // new cookie is invalid
@@ -120,7 +111,6 @@ const cookieHandler = async (
         : `?theme=light`
     }`,
   });
-
 };
 
 // This file is ran as a background script
