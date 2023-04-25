@@ -25,14 +25,25 @@ export const FlexiReq = {
         Cookie: `flexisched_session_id=${tokendata.token}`,
       },
       method: "POST",
-      body: req.body,
+      body:
+        contType === "application/json"
+          ? JSON.stringify(req.body)
+          : //or urlencoded
+            Object.keys(req.body) //get keys
+              .map(
+                (key) =>
+                  `${encodeURIComponent(key)}=${encodeURIComponent(
+                    req.body[key]
+                  )}`
+              ) //map to key=value
+              .join("&"), //join with &
     });
     const resText = await responseData.text();
     if (resText.includes("<title>FlexiSCHED Login</title>")) {
       return res.status(401).send("Outdated token");
     }
     if (!responseData.ok) {
-      console.log(responseData.status, resText,);
+      console.log(responseData.status, resText);
       console.log(req.body);
     }
     return res.status(responseData.status).send(resText);
