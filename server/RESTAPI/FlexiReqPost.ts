@@ -8,6 +8,7 @@ export const FlexiReq = {
   method: RESTMethods.POST,
   run: async (req, res, next) => {
     const path = req.path.replace("/flexiRequest", "");
+    const contType = req.headers["content-type"];
     const token = req.headers.authorization;
     if (!token || !verifyToken(token)) {
       return res.status(401).send("No token provided/invalid token");
@@ -20,7 +21,7 @@ export const FlexiReq = {
     const responseData = await nfetch(`${baseReqURL}${path}`, {
       //@ts-ignore
       headers: {
-        ...req.headers,
+        "Content-Type": contType || "application/x-www-form-urlencoded",
         Cookie: `flexisched_session_id=${tokendata.token}`,
       },
       method: "POST",
