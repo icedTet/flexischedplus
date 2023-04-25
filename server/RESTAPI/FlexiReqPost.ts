@@ -18,19 +18,20 @@ export const FlexiReq = {
     }
     const baseReqURL = tokendata.dashboardURL.match(/^https?:\/\/[^\/]+/)![0];
     const responseData = await nfetch(`${baseReqURL}${path}`, {
+      //@ts-ignore
       headers: {
+        ...req.headers,
         Cookie: `flexisched_session_id=${tokendata.token}`,
-        "Content-Type": "application/json",
       },
       method: "POST",
-      body: JSON.stringify(req.body),
+      body: req.body,
     });
     const resText = await responseData.text();
     if (resText.includes("<title>FlexiSCHED Login</title>")) {
       return res.status(401).send("Outdated token");
     }
     if (!responseData.ok) {
-      console.log(responseData.status, resText);
+      console.log(responseData.status, resText, `"${req.body}"`);
     }
     return res.status(responseData.status).send(resText);
   },
