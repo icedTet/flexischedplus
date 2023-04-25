@@ -91,6 +91,7 @@ MongoConnection.connect().then(async (db) => {
     })
   );
   server.use(express.json({ limit: "100mb" }));
+  server.use(express.urlencoded({ limit: "100mb", extended: true }));
   const failedImports = [] as string[];
   importAllHandlers(`${__dirname}/RESTAPI`, failedImports).then(() => {
     console.log("Loaded all handlers");
