@@ -71,32 +71,36 @@ export class TokenRefresher extends EventEmitter {
       const toPingIndex = binarySearch(this.tokenQueue, now);
       const toPing = this.tokenQueue.splice(0, toPingIndex + 1);
       for (const token of toPing) {
-        const data = await getDataFromID(token.id);
-        if (!data) continue;
-        const { token: oldToken, lastPing, dashboardURL } = data;
-        if (lastPing > Date.now() + 1000 * 60 * 60 * 24 * 90) continue; // 90 days
-        //update token
-        const dashbaordReq = await nfetch(dashboardURL, {
-          headers: {
-            cookie: `flexisched_session_id=${oldToken}`,
-          },
-        });
-        const dashboardHTML = await dashbaordReq.text();
-        if (dashboardHTML.includes("<title>FlexiSCHED Login</title>")) {
-          deleteEntryFromID(token.id); // token expired
-          continue;
-        }
+        try {
+          const data = await getDataFromID(token.id);
+          if (!data) continue;
+          const { token: oldToken, lastPing, dashboardURL } = data;
+          if (lastPing > Date.now() + 1000 * 60 * 60 * 24 * 90) continue; // 90 days
+          //update token
+          const dashbaordReq = await nfetch(dashboardURL, {
+            headers: {
+              cookie: `flexisched_session_id=${oldToken}`,
+            },
+          });
+          const dashboardHTML = await dashbaordReq.text();
+          if (dashboardHTML.includes("<title>FlexiSCHED Login</title>")) {
+            deleteEntryFromID(token.id); // token expired
+            continue;
+          }
 
-        const newToken = dashbaordReq.headers
-          .get("set-cookie")
-          ?.match(/flexisched_session_id=([^;]+)/)?.[1];
-        if (!newToken) continue;
-        await setDataFromID(token.id, {
-          token: newToken,
-        });
-        // push token back into queue after 30 minutes
-        this.autoSched(data, newToken);
-        this.queueToken(token.id);
+          const newToken = dashbaordReq.headers
+            .get("set-cookie")
+            ?.match(/flexisched_session_id=([^;]+)/)?.[1];
+          if (!newToken) continue;
+          await setDataFromID(token.id, {
+            token: newToken,
+          });
+          // push token back into queue after 30 minutes
+          this.autoSched(data, newToken);
+          this.queueToken(token.id);
+        } catch (error) {
+          console.error(error);
+        }
       }
       //if no tokens to ping, wait 30 seconds
       if (toPingIndex === -1)
