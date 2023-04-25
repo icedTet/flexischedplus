@@ -32,7 +32,8 @@ export const FlexiReq = {
       return res.status(401).send("Outdated token");
     }
     if (!responseData.ok) {
-      console.log(responseData.status, resText, `"${JSON.stringify(req.body)}"`);
+      console.log(responseData.status, resText,);
+      console.log(req.body);
     }
     return res.status(responseData.status).send(resText);
   },
