@@ -1,6 +1,7 @@
 import EventEmitter from "events";
 import nfetch from "./FixedNodeFetch";
 import {
+  UserData,
   deleteEntryFromID,
   getAllEntries,
   getDataFromID,
@@ -41,13 +42,13 @@ export class TokenRefresher extends EventEmitter {
   }
   private constructor() {
     super();
-    this.loadTokens().then(()=>{
+    this.loadTokens().then(() => {
       this.pingLoop();
     });
   }
   tokenQueue: TokenData[] = [];
   queueToken(token: string, nextPing?: number) {
-    const next = nextPing || Date.now() + 1000 *5 //* 60 * 30; // 30 minutes
+    const next = nextPing || Date.now() + 1000 * 5; //* 60 * 30; // 30 minutes
     this.tokenQueue.push({ id: token, nextPing: next });
     this.emit("tokenQueued", token);
   }
@@ -57,7 +58,7 @@ export class TokenRefresher extends EventEmitter {
     const tokens = await getAllEntries();
     console.log("Loaded tokens", tokens);
     tokens.forEach((token) => {
-      this.queueToken(token.id,100);
+      this.queueToken(token.id, 100);
     });
     tokens.forEach((token) => {
       this.queueToken(token.id);
@@ -94,11 +95,29 @@ export class TokenRefresher extends EventEmitter {
           token: newToken,
         });
         // push token back into queue after 30 minutes
+        this.autoSched(data, newToken);
         this.queueToken(token.id);
       }
       //if no tokens to ping, wait 30 seconds
       if (toPingIndex === -1)
         await new Promise((r) => setTimeout(r, 1000 * 30));
+    }
+  }
+  async autoSched(data: UserData, token: string) {
+    if (data.preferredClass) {
+      const origin = data.dashboardURL.match(/https?:\/\/[^/]+/)?.[0];
+      const res = await nfetch(`${origin}/clickToSched.php`, {
+        method: "POST",
+        headers: {
+          cookie: `flexisched_session_id=${token}`,
+          "content-type": "application/x-www-form-urlencoded",
+        },
+        body: `flex=${encodeURIComponent(data.preferredClass)}&day=1&period=1`,
+      });
+      if (!res.ok) {
+        return "Failed to auto sched class";
+      }
+      return await res.text();
     }
   }
 }

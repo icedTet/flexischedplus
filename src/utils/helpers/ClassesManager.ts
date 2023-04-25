@@ -153,15 +153,34 @@ export class ClassesManager extends EventEmitter {
     const response = (await fetcher(`${origin}/clickToSched.php?`, {
       method: "POST",
       body: `flex=${encodeURIComponent(option.teacher.raw)}&day=1&period=1`,
-      headers:{
-        "Content-Type": "application/x-www-form-urlencoded"
-      }
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
     }).then((res) => res.text())) as string | null;
     console.log(response);
     this.fetchOptions();
     await this.fetchCurrentEnrollment();
     return response;
   }
+  async scheduleAutoEnrollment(option: ClassOption) {
+    // const origin = await extensionStorage.get("fsorigin");
+    const idtoken = (await extensionStorage.get("idtoken")) as string;
+    const response = (await fetch(`https://api.flexischedplus.tet.moe/autoSchedule`, {
+      method: "POST",
+      body: JSON.stringify({
+        preferredClass: option.teacher.raw,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${idtoken}`,
+      },
+    }).then((res) => res.text())) as string | null;
+    console.log(response);
+    this.fetchOptions();
+    await this.fetchCurrentEnrollment();
+    return response;
+  }
+
   static parseOption(opt: Cheerio<Element>) {
     // console.log(opt.children().eq(0), opt.html());
     const teacher = opt.children().eq(0).text();

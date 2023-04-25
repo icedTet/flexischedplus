@@ -3,6 +3,7 @@ export type UserData = {
   token: string;
   dashboardURL: string;
   lastPing: number;
+  preferredClass?: string;
 };
 export const getDataFromID = async (id: string) =>
   MongoDB?.db("FlexiSchedMain")
