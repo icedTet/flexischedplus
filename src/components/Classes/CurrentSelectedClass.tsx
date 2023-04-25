@@ -2,8 +2,43 @@ import * as React from "react";
 import { useCourseEnrollments } from "../../hooks/useCourseEnrollments";
 import { useCourseOptions } from "../../hooks/useCourseOptions";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import {
+  ClassOption,
+  ClassesManager,
+} from "../../utils/helpers/ClassesManager";
+import { useState, useEffect } from "react";
+import { useUserAuth } from "../../hooks/useUserAuth";
 export const CurrentSelectedClass = () => {
   const enrollment = useCourseEnrollments();
+  const [changingDefault, setChangingDefault] = useState(false);
+  const [enrolledClassAuto, setEnrolledClassAuto] = useState(
+    null as null | ClassOption
+  );
+  useEffect(() => {
+    const changeEnrolledClass = () => {
+      console.log("changeEnrolledClass", ClassesManager.getInstance().nonce);
+      setEnrolledClassAuto(
+        ClassesManager.getInstance().cachedAutoEnrollClass ?? null
+      );
+      console.log("changeEnrolledClass", {
+        cachedAutoEnrollClass:
+          ClassesManager.getInstance().cachedAutoEnrollClass,
+        enrolledClassAuto,
+      });
+    };
+    changeEnrolledClass();
+    ClassesManager.getInstance().addListener(
+      "autoEnrollClassUpdate",
+      changeEnrolledClass
+    );
+    return () => {
+      ClassesManager.getInstance().off(
+        "autoEnrollClassUpdate",
+        changeEnrolledClass
+      );
+    };
+  }, []);
+
   return (
     <div className={`w-full flex flex-col gap-4`}>
       <div className={`w-full flex flex-col gap-1 items-start`}>
@@ -42,9 +77,23 @@ export const CurrentSelectedClass = () => {
               </span>
               <div className={`flex flex-row justify-end w-full`}>
                 <button
-                  className={`dark:bg-fuchsia-600 px-3 py-1.5 text-sm text-gray-50 rounded-full dark:hover:bg-fuchsia-700 bg-fuchsia-400 hover:bg-fuchsia-300 transition-all duration-200 opacity-25`}
+                  className={`dark:bg-fuchsia-600 px-3 py-1.5 text-sm text-gray-50 rounded-full dark:hover:bg-fuchsia-700 bg-fuchsia-400 hover:bg-fuchsia-300 transition-all duration-200 disabled:opacity-30`}
+                  disabled={
+                    changingDefault ||
+                    enrolledClassAuto?.teacher.raw === enrollment.teacher.raw
+                  }
+                  onClick={async () => {
+                    if (changingDefault) return;
+                    setChangingDefault(true);
+                    await ClassesManager.getInstance().scheduleAutoEnrollment(
+                      enrollment
+                    );
+                    setChangingDefault(false);
+                  }}
                 >
-                  Set as default (WIP)
+                  {enrolledClassAuto?.teacher.raw === enrollment.teacher.raw
+                    ? `Selected as Default`
+                    : `Set as Default`}
                 </button>
               </div>
             </div>

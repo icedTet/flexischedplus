@@ -18,28 +18,45 @@ export type ClassOption = {
 };
 import { Element } from "domhandler";
 import { fetcher } from "./AuthorizedFetcher";
-import { MapToObj, ObjToMap } from "./MiniTetLib";
+import { MapToObj, ObjToMap, refreshToken } from "./MiniTetLib";
+import { nanoid } from "nanoid";
 
 export class ClassesManager extends EventEmitter {
   static instance: ClassesManager;
   static getInstance() {
+    console.log("ClassesManager getInstance", ClassesManager.instance);
     if (!ClassesManager.instance) {
       ClassesManager.instance = new ClassesManager();
     }
     return ClassesManager.instance;
   }
+
   private constructor() {
     super();
     this.loadCached();
     this.fetchOptions().then(() => {
       this.fetchCurrentEnrollment();
     });
+    this.nonce = nanoid();
+    this.updateAutoEnrollClass()
+    console.log("ClassesManager constructor", this.nonce);
   }
   options: ClassOption[] | null | undefined;
   optionMap: Map<string, ClassOption[]> | null | undefined;
   enrolled: ClassOption[] | null | undefined;
   default: ClassOption[] | null | undefined;
   currentEvent: string | null | undefined;
+  cachedAutoEnrollClass: ClassOption | null | undefined;
+  nonce: string | null | undefined;
+  async updateAutoEnrollClass() {
+    while (true) {
+      const pclass = await extensionStorage.get("preferredClass");
+      if (pclass) {
+        this.setAutoEnrollClass(pclass);
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
   async loadCached() {
     const cached = await extensionStorage.get("cachedPRIMES");
     const cachedMap = await extensionStorage.get("cachedPRIMESMap");
@@ -63,6 +80,20 @@ export class ClassesManager extends EventEmitter {
       this.emit("eventUpdate", cachedEvent);
     }
   }
+  async setAutoEnrollClass(rawClass: string) {
+    this.options = this.options || [];
+    console.log("rawClass", rawClass, this.options[0].teacher);
+    const classObj = this.options.find((c) => c.teacher.raw === rawClass);
+    console.log("rawClass2", rawClass, classObj);
+    if (!classObj) {
+      console.log("class not found");
+      return;
+    }
+    this.cachedAutoEnrollClass = classObj;
+    ClassesManager.getInstance().emit("autoEnrollClassUpdate", classObj);
+    console.log("class found", classObj, ClassesManager.getInstance().nonce);
+  }
+
   async fetchOptions() {
     const origin = await extensionStorage.get("fsorigin");
 
@@ -181,6 +212,7 @@ export class ClassesManager extends EventEmitter {
     console.log(response);
     this.fetchOptions();
     await this.fetchCurrentEnrollment();
+    await refreshToken();
     return response;
   }
 

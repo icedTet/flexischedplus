@@ -2,6 +2,14 @@ import { nanoid } from "nanoid";
 import { ClassesManager } from "./utils/helpers/ClassesManager";
 import { extensionStorage } from "./utils/helpers/LocalStorageHelper";
 import { UserManager } from "./utils/helpers/UserManager";
+import { refreshToken } from "./utils/helpers/MiniTetLib";
+type UserDataClient = {
+  id: string;
+  token: string;
+  dashboardURL: string;
+  lastPing: number;
+  preferredClass?: string;
+};
 
 ClassesManager.getInstance();
 UserManager.getInstance();
@@ -139,32 +147,7 @@ const cookieHandler = async (
   }
   while (true) {
     console.log("Pulling latest token");
-    try {
-      const idtoken = await extensionStorage.get("idtoken");
-      const newToken = await fetch(`${server}/getLatestToken`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${idtoken}`,
-        },
-      })
-        .then((r) => r.json())
-        .catch((er) => console.warn(er));
-      if (newToken.token)
-        await extensionStorage.set("sesscookie", newToken.token);
-      console.log("Updated token");
-      try {
-        await ClassesManager.getInstance().fetchCurrentEnrollment();
-        await ClassesManager.getInstance().fetchOptions();
-        await UserManager.getInstance().getUser();
-      } catch (error) {
-        console.log("Error fetching data", error);
-      }
-
-      await new Promise((r) => setTimeout(r, 1000 * 10));
-    } catch (error) {
-      console.warn("Error pulling latest token", error);
-      await new Promise((r) => setTimeout(r, 1000 * 4));
-    }
+    refreshToken();
+    await new Promise((r) => setTimeout(r, 1000 * 5));
   }
 })();
