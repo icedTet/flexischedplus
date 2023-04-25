@@ -99,28 +99,49 @@ export const ClassListEntry = (props: { option: ClassOption }) => {
                   </>
                 )}
               </div>
-              <div className={`flex flex-row gap-4`}>
+              <div className={`flex flex-row gap-4 justify-between w-full`}>
                 {option.open ? (
                   <>
-                    <button
-                      className={`bg-fuchsia-500 rounded-2xl px-6 py-3 hover:bg-fuchsia-700 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
-                      // disabled={(() => {
-                      //   // const match = url.match(/^https?:\/\/([a-z0-9-]+\.)*[a-z0-9-]+$/);
-                      //   // return !match || !url.toLowerCase().includes("flexisched");
-                      // })()}
-                      disabled={clicking}
-                      onClick={() => {
-                        setClicking(true);
-                        ClassesManager.getInstance()
-                          .scheduleEnrollment(option)
-                          .then((res) => {
-                            setEnrollmentResult(res);
-                            setClicking(false);
-                          });
-                      }}
-                    >
-                      Confirm
-                    </button>
+                    <div className={`flex flex-row gap-4`}>
+                      <button
+                        className={`bg-fuchsia-500 rounded-2xl px-6 py-3 hover:bg-fuchsia-700 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
+                        // disabled={(() => {
+                        //   // const match = url.match(/^https?:\/\/([a-z0-9-]+\.)*[a-z0-9-]+$/);
+                        //   // return !match || !url.toLowerCase().includes("flexisched");
+                        // })()}
+                        disabled={clicking}
+                        onClick={() => {
+                          setClicking(true);
+                          ClassesManager.getInstance()
+                            .scheduleEnrollment(option)
+                            .then((res) => {
+                              setEnrollmentResult(res);
+                              setClicking(false);
+                            });
+                        }}
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        className={`bg-gray-900 rounded-2xl px-6 py-3 hover:bg-gray-600 hover:brightness-110 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-white`}
+                        // disabled={(() => {
+                        //   // const match = url.match(/^https?:\/\/([a-z0-9-]+\.)*[a-z0-9-]+$/);
+                        //   // return !match || !url.toLowerCase().includes("flexisched");
+                        // })()}
+                        disabled={clicking}
+                        onClick={() => {
+                          setClicking(true);
+                          ClassesManager.getInstance()
+                            .scheduleAutoEnrollment(option)
+                            .then((res) => {
+                              setEnrollmentResult(res);
+                              setClicking(false);
+                            });
+                        }}
+                      >
+                        Auto-Enroll
+                      </button>
+                    </div>
                     <button
                       className={`text-gray-900/40 dark:text-gray-100/20 hover:text-gray-800/40 hover:bg-gray-500/20 dark:hover:text-gray-50/30 transition-all font-semibold rounded-2xl px-6 py-3`}
                       onClick={() => {

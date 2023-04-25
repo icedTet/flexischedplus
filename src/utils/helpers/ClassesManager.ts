@@ -165,16 +165,19 @@ export class ClassesManager extends EventEmitter {
   async scheduleAutoEnrollment(option: ClassOption) {
     // const origin = await extensionStorage.get("fsorigin");
     const idtoken = (await extensionStorage.get("idtoken")) as string;
-    const response = (await fetch(`https://api.flexischedplus.tet.moe/autoSchedule`, {
-      method: "POST",
-      body: JSON.stringify({
-        preferredClass: option.teacher.raw,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `${idtoken}`,
-      },
-    }).then((res) => res.text())) as string | null;
+    const response = (await fetch(
+      `https://api.flexischedplus.tet.moe/autoSchedule`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          preferredClass: option.teacher.raw,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${idtoken}`,
+        },
+      }
+    ).then((res) => res.text())) as string | null;
     console.log(response);
     this.fetchOptions();
     await this.fetchCurrentEnrollment();
