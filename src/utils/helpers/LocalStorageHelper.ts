@@ -1,18 +1,12 @@
 import { EventEmitter } from "events";
 let pcache = null as { [key: string]: any } | null;
-
-export class StorageUpdates extends EventEmitter {
-  static instance: StorageUpdates;
-  static getInstance() {
-    if (!StorageUpdates.instance) {
-      StorageUpdates.instance = new StorageUpdates();
-    }
-    return this.instance;
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === "storageUpdate") {
+    console.log("Storage update");
+    pcache = {};
+    extensionStorage.getAll();
   }
-  private constructor() {
-    super();
-  }
-}
+});
 export const extensionStorage = {
   getAll: () => {
     return new Promise((resolve, reject) => {
@@ -21,7 +15,6 @@ export const extensionStorage = {
           // console.log("Storage changed", changes);
           Object.entries(changes).map(([key, { newValue }]) => {
             pcache![key] = newValue;
-            StorageUpdates.getInstance().emit("change", key, newValue);
           });
         }
       });

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   extensionStorage,
-  StorageUpdates,
 } from "../utils/helpers/LocalStorageHelper";
 import { UserManager } from "../utils/helpers/UserManager";
 import { User } from "../utils/types";

@@ -65,7 +65,6 @@ export const StoreToken = {
         token: fstoken,
         dashboardURL: url,
         lastPing: Date.now(),
-        id: token,
         flexischedUserID: userID,
       });
     } else {

@@ -105,6 +105,9 @@ const cookieHandler = async (
       const json = await storer.json();
       console.log(json);
       await extensionStorage.set("idtoken", json.id);
+      await chrome.runtime.sendMessage({
+        type: "storageUpdate",
+      });
     }
   }
 
