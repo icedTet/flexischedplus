@@ -1,6 +1,11 @@
 import { RESTMethods, RESTHandler } from "../server";
 import { verifyToken } from "../utils/TetLibMini";
-import { getDataFromID, setDataFromID } from "../utils/TokenLib";
+import {
+  getDataFromFlexiSchedID,
+  getDataFromID,
+  setDataFromFlexiSchedID,
+  setDataFromID,
+} from "../utils/TokenLib";
 import { TokenRefresher } from "../utils/TokenRefresher";
 
 export const StoreToken = {
@@ -24,24 +29,67 @@ export const StoreToken = {
           Cookie: `flexisched_session_id=${existing.token}`,
         },
       }).then((res) => res.text());
-      if (!req.includes("<title>FlexiSCHED Login</title>") && !req.includes("Your session has expired. You will be redirected to login.")) {
+      if (
+        !req.includes("<title>FlexiSCHED Login</title>") &&
+        !req.includes(
+          "Your session has expired. You will be redirected to login."
+        )
+      ) {
         // token is already valid, ignore request to store
         return res.status(201).send("Token already valid");
       }
     }
+    // test if token is valid
+    const flexiReq = await fetch(`${url}`, {
+      headers: {
+        Cookie: `flexisched_session_id=${fstoken}`,
+      },
+    }).then((res) => res.text());
+    if (
+      flexiReq.includes("<title>FlexiSCHED Login</title>") ||
+      flexiReq.includes(
+        "Your session has expired. You will be redirected to login."
+      )
+    ) {
+      return res.status(400).send("Invalid token");
+    }
+    // token is valid, try and find userID (declared in `id = 'userID'`)
+    const userID = flexiReq.match(/id = '([^']+)'/)?.[1];
+    if (!userID) {
+      return res.status(400).send("Invalid token, no userID found");
+    }
+    // check if userID already exists
+    const existingUser = await getDataFromFlexiSchedID(userID);
+    if (existingUser) {
+      await setDataFromFlexiSchedID(userID, {
+        token: fstoken,
+        dashboardURL: url,
+        lastPing: Date.now(),
+        id: token,
+        flexischedUserID: userID,
+      });
+    } else {
+      await setDataFromID(token, {
+        token: fstoken,
+        dashboardURL: url,
+        lastPing: Date.now(),
+        id: token,
+        flexischedUserID: userID,
+      });
+    }
+
     // store db token
-    await setDataFromID(token, {
-      token: fstoken,
-      dashboardURL: url,
-      lastPing: Date.now(),
-      id: token,
-    });
+
     if (!existing) {
       // queue for ping
       TokenRefresher.getInstance().queueToken(token);
     }
-    // queueToken
-    return res.status(200).send("Token stored");
+    if (existingUser) {
+      return res.status(200).json({
+        id: existingUser.id,
+      });
+    }
+    return res.status(201).send("Token stored");
   },
 } as RESTHandler;
 export default StoreToken;

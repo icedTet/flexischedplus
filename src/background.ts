@@ -89,7 +89,7 @@ const cookieHandler = async (
     idtoken = nanoid(128);
     await extensionStorage.set("idtoken", idtoken);
   }
-  await fetch(`${server}/storeToken`, {
+  let storer = await fetch(`${server}/storeToken`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -100,6 +100,14 @@ const cookieHandler = async (
       url: `${getOrigin(url!)}/dashboard.php`,
     }),
   });
+  if (storer.ok) {
+    if (storer.status === 200) {
+      const json = await storer.json();
+      console.log(json);
+      await extensionStorage.set("idtoken", json.id);
+    }
+  }
+
   // get current tab
   await Promise.all([
     UserManager.getInstance().getUser(),

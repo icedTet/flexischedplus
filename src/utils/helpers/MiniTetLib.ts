@@ -26,15 +26,27 @@ export const ObjToMap = <T>(obj: { [key: string]: T }): Map<string, T> => {
 export const refreshToken = async () => {
   try {
     const idtoken = await extensionStorage.get("idtoken");
-    const newToken = await fetch(`${server}/getLatestToken`, {
+    const newTokenReq = await fetch(`${server}/getLatestToken`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `${idtoken}`,
       },
-    })
-      .then((r) => r.json() as Promise<UserDataClient>)
-      .catch((er) => console.warn(er));
+    });
+    // .then((r) => r.ok ? r.json() as Promise<UserDataClient> )
+    // .catch((er) => console.warn(er));
+    const newToken = newTokenReq.ok
+      ? ((await newTokenReq.json()) as UserDataClient)
+      : null;
+    if (!newToken) {
+      if (newTokenReq.status === 401) {
+        // token invalid
+        await extensionStorage.clear();
+        
+        globalThis?.window?.location?.reload();
+        return;
+      }
+    }
     if (newToken && newToken.token)
       await extensionStorage.set("sesscookie", newToken.token);
     console.log("Updated token");

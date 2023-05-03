@@ -4,6 +4,7 @@ export type UserData = {
   dashboardURL: string;
   lastPing: number;
   preferredClass?: string;
+  flexischedUserID?: string;
 };
 export const getDataFromID = async (id: string) =>
   MongoDB?.db("FlexiSchedMain")
@@ -21,3 +22,18 @@ export const getAllEntries = async () => {
     .find({})
     .toArray()) as unknown as Promise<UserData[]>;
 };
+export const getDataFromFlexiSchedID = async (id: string) =>
+  MongoDB?.db("FlexiSchedMain")
+    .collection("usertokens")
+    .findOne({ flexischedUserID: id }) as Promise<UserData | null>;
+export const setDataFromFlexiSchedID = async (
+  id: string,
+  data: Partial<UserData>
+) =>
+  MongoDB?.db("FlexiSchedMain")
+    .collection("usertokens")
+    .updateOne({ flexischedUserID: id }, { $set: data }, { upsert: true });
+export const deleteEntryFromFlexiSchedID = async (id: string) =>
+  MongoDB?.db("FlexiSchedMain")
+    .collection("usertokens")
+    .deleteOne({ flexischedUserID: id });

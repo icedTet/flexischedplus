@@ -8,6 +8,7 @@ import { env } from "./../env";
 import { read, readFileSync, watch } from "fs";
 import { lstat, readdir } from "fs/promises";
 import { TokenRefresher } from "./utils/TokenRefresher";
+import { keepLatestUserIDs } from "./scripts/keepOnlyLatestUserID";
 declare global {
   var MongoDB: MongoClient | null;
 }
@@ -42,9 +43,9 @@ const importAllHandlers = async (path: string, failedImports: string[]) => {
       if ((await lstat(`${path}/${file}`)).isDirectory()) {
         console.log(`Importing Folder ${path}/${file}`);
         return await importAllHandlers(`${path}/${file}`, failedImports);
-      } 
+      }
       if (!file.endsWith(".ts") && !file.endsWith(".js")) {
-        return
+        return;
       }
       import(`${path}/${file}`)
         .then((module) => {
@@ -101,7 +102,7 @@ MongoConnection.connect().then(async (db) => {
     );
   });
   //Import all REST Endpoints
-
+  keepLatestUserIDs();
   if (env?.webserver) {
     function readCertsSync() {
       return {

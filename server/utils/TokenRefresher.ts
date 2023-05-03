@@ -53,7 +53,6 @@ export class TokenRefresher extends EventEmitter {
     this.emit("tokenQueued", token);
   }
   async loadTokens() {
-    await getAllEntries();
     console.log("Loading tokens");
     const tokens = await getAllEntries();
     console.log("Loaded tokens", tokens);
