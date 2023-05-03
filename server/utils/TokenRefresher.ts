@@ -54,6 +54,9 @@ export class TokenRefresher extends EventEmitter {
   }
   async loadTokens() {
     console.log("Loading tokens");
+    while (!MongoDB) {
+      await new Promise((r) => setTimeout(r, 10));
+    }
     const tokens = await getAllEntries();
     console.log("Loaded tokens", tokens);
     tokens.forEach((token) => {

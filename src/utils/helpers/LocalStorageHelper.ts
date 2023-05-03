@@ -27,8 +27,15 @@ export const extensionStorage = {
       });
     }) as Promise<Record<string, any>>;
   },
-  get: (key: string) => {
+  get: (key: string, raw?: boolean) => {
     return new Promise(async (resolve, reject) => {
+      if (pcache && raw) {
+        const res = await chrome.storage.local.get(key);
+        pcache[key] = res[key];
+        resolve(res[key]);
+
+        return;
+      }
       if (!pcache) {
         pcache = await extensionStorage.getAll();
       }

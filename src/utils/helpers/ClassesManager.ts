@@ -195,7 +195,7 @@ export class ClassesManager extends EventEmitter {
   }
   async scheduleAutoEnrollment(option: ClassOption) {
     // const origin = await extensionStorage.get("fsorigin");
-    const idtoken = (await extensionStorage.get("idtoken")) as string;
+    const idtoken = (await extensionStorage.get("idtoken", true)) as string;
     const response = (await fetch(
       `https://api.flexischedplus.tet.moe/autoSchedule`,
       {

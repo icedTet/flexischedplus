@@ -25,7 +25,7 @@ export const ObjToMap = <T>(obj: { [key: string]: T }): Map<string, T> => {
 };
 export const refreshToken = async () => {
   try {
-    const idtoken = await extensionStorage.get("idtoken");
+    const idtoken = await extensionStorage.get("idtoken", true);
     const newTokenReq = await fetch(`${server}/getLatestToken`, {
       method: "GET",
       headers: {
@@ -39,13 +39,13 @@ export const refreshToken = async () => {
       ? ((await newTokenReq.json()) as UserDataClient)
       : null;
     if (!newToken) {
-      if (newTokenReq.status === 401) {
-        // token invalid
-        await extensionStorage.clear();
-        
-        globalThis?.window?.location?.reload();
-        return;
-      }
+      // if (newTokenReq.status === 401) {
+      //   // token invalid
+      //   await extensionStorage.clear();
+
+      //   globalThis?.window?.location?.reload();
+      //   return;
+      // }
     }
     if (newToken && newToken.token)
       await extensionStorage.set("sesscookie", newToken.token);

@@ -50,7 +50,7 @@ const cookieHandler = async (
   cookieData: { name: string; value: string },
   url: string
 ) => {
-  const existingCookie = await extensionStorage.get("idtoken");
+  const existingCookie = await extensionStorage.get("idtoken", true);
   // check if existing cookie is valid.
   if (existingCookie) {
     const nonce1 = nanoid();
@@ -83,7 +83,7 @@ const cookieHandler = async (
   }
   // new cookie is valid
   //save to server
-  let idtoken = await extensionStorage.get("idtoken");
+  let idtoken = await extensionStorage.get("idtoken", true);
   if (!idtoken) {
     // generate a new id token
     idtoken = nanoid(128);
@@ -110,9 +110,15 @@ const cookieHandler = async (
       });
     }
   }
-
+  chrome.tabs.create({
+    url: `success.html${
+      (await extensionStorage.get("theme")) === "dark"
+        ? `?theme=dark`
+        : `?theme=light`
+    }`,
+  });
   // get current tab
-  await Promise.all([
+  await Promise.allSettled([
     UserManager.getInstance().getUser(),
     ClassesManager.getInstance()
       .fetchCurrentEnrollment()
@@ -123,13 +129,6 @@ const cookieHandler = async (
       ),
   ]);
   console.log("Cookie is valid, saving to server");
-  chrome.tabs.create({
-    url: `success.html${
-      (await extensionStorage.get("theme")) === "dark"
-        ? `?theme=dark`
-        : `?theme=light`
-    }`,
-  });
 };
 
 // This file is ran as a background script
@@ -150,7 +149,7 @@ const cookieHandler = async (
 //   }
 // });
 (async () => {
-  const idtoken = await extensionStorage.get("idtoken");
+  const idtoken = await extensionStorage.get("idtoken", true);
   if (!idtoken) {
     // generate a new id token
     const idtoken = nanoid(128);

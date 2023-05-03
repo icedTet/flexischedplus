@@ -9,7 +9,7 @@ export const fetcher = async (
   //   console.log('[fetcher]', input, init, btype))
   const ruleID = ~~(Math.random() * 10000000);
   const nonce = nanoid();
-  const idtoken = (await extensionStorage.get("idtoken")) as string;
+  const idtoken = (await extensionStorage.get("idtoken", true)) as string;
 
   const url = new URL(input as string);
   url.searchParams.set("b", nonce);

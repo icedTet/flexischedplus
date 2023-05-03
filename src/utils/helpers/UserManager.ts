@@ -31,8 +31,11 @@ export class UserManager extends EventEmitter {
       res.text()
     );
     if (dashboardTxt === "Token not found") {
-      await extensionStorage.clear();
-      globalThis?.window?.location?.reload();
+      extensionStorage.set("user", null);
+      this.emit("user", null);
+      return null;
+      // await extensionStorage.clear();
+      // globalThis?.window?.location?.reload();
     }
     const name = dashboardTxt?.match(
       /(?:<h1 class="page_heading">Student Schedule for )([^<]+)/
